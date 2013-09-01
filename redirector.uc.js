@@ -5,7 +5,7 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.tk
-// @version         1.1.0
+// @version         1.1.1
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -16,7 +16,7 @@
             from: "about:haoutil",                  // 需要重定向的地址
             to: "https://haoutil.googlecode.com",   // 目标地址
             regex: false,                           // 可选，true 表示 from 是正则表达式
-            resp: false,                            // 可选，true 表示替换 response body
+            resp: false                            // 可选，true 表示替换 response body
         },{
             from: /^http:\/\/(([^\.]+\.)?google\..+)/i,
             exclude: /google\.cn/i,                 // 可选，排除例外规则
@@ -49,14 +49,13 @@
             let redirectUrl = null
             for each (let rule in this.rules) {
                 let redirect = rule.regex
-                    ? rule.exclude && rule.exclude.test(url) ? false : rule.from.test(url) ? true : false
-                    : rule.exclude && rule.exclude == url ? false : rule.from == url ? true : false;
+                    ? rule.from.test(url) ? !(rule.exclude && rule.exclude.test(url)) : false
+                    : rule.from == url ? !(rule.exclude && rule.exclude == url) : false;
                 if (redirect) {
-                    if (!rule.exclude)
-                        redirectUrl = {
-                            url: rule.regex ? url.replace(rule.from, rule.to) : rule.to,
-                            resp: rule.resp
-                        };
+                    redirectUrl = {
+                        url: rule.regex ? url.replace(rule.from, rule.to) : rule.to,
+                        resp: rule.resp
+                    };
                     break;
                 }
             }
