@@ -5,7 +5,7 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.tk
-// @version         1.1.1
+// @version         1.2.0
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -136,13 +136,19 @@
                     let redirectUrl = this.getRedirectUrl(http.URI.spec);
                     if (redirectUrl && !redirectUrl.resp)
                         if(http.redirectTo)
+                            // firefox 20+
                             http.redirectTo(Services.io.newURI(redirectUrl.url, null, null));
+                        else
+                            // others replace response body
+                            redirectUrl.resp = true;
                     break;
                 }
                 case "http-on-examine-response": {
                     let http = subject.QueryInterface(Ci.nsIHttpChannel);
                     let redirectUrl = this.getRedirectUrl(http.URI.spec);
                     if (redirectUrl && redirectUrl.resp) {
+                        if(!http.redirectTo)
+                            redirectUrl.resp = false;
                         if (!redirectUrl.storageStream || !redirectUrl.count) {
                             http.suspend();
                             this.getTarget(redirectUrl, function() {
