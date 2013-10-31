@@ -5,7 +5,7 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.tk
-// @version         1.4.3
+// @version         1.4.5
 // @updateUrl       https://j.mozest.com/zh-CN/ucscript/script/92.meta.js
 // @downloadUrl     https://j.mozest.com/zh-CN/ucscript/script/92.uc.js
 // ==/UserScript==
@@ -24,16 +24,20 @@
             },
             'ku6': {
                 'player': 'https://haoutil.googlecode.com/svn/trunk/player/ku6.swf',
-                're': /http:\/\/player\.ku6cdn\.com\/.*\/\d+\/player\.swf/i
+                're': /http:\/\/player\.ku6cdn\.com\/default\/common\/player\/\d{12}\/player\.swf/i
+            },
+            'ku6_out': {
+                'player': 'https://haoutil.googlecode.com/svn/trunk/player/ku6_out.swf',
+                're': /http:\/\/player\.ku6cdn\.com\/default\/out\/\d{12}\/player\.swf/i
             },
             'iqiyi': {
                 'player0': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi_out.swf',
                 'player1': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi5.swf',
-                'player2': 'https://haoutil.googlecode.com/svn/trunk/player/iqiyi.swf',
+                'player2': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/iqiyi.swf',
                 're': /http:\/\/www\.iqiyi\.com\/player\/\d+\/player\.swf/i
             },
             'tudou': {
-                'player': 'https://haoutil.googlecode.com/svn/trunk/player/tudou.swf',
+                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/tudou.swf',
                 're': /http:\/\/js\.tudouui\.com\/.*portalplayer[^\.]*\.swf/i
             },
             'tudou_olc': {
@@ -46,7 +50,11 @@
             },
             'letv': {
                 'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/letv.swf',
-                're': /http:\/\/.*letv[\w]*\.com\/.*\/(?!Live)[\w]{4}Player[^\.]*\.swf/i
+                're': /http:\/\/.*letv[\w]*\.com\/(.*\/(?!live)((v2)?[\w]{4}|swf)player[^\.]*|[\w]*cloud)\.swf/i
+            },
+            'kletv': {
+                'player': 'http://player.haoutil.com/player/kletv.swf',
+                're': /http:\/\/player\.letvcdn\.com\/p\/.*\/1\/kletvplayer\.swf/i
             },
             'pplive': {
                 'player': 'https://haoutil.googlecode.com/svn/trunk/player/pplive.swf',
@@ -65,7 +73,7 @@
                 var wnd = this.getWindowForRequest(aSubject);
                 if(wnd) {
                     site['cond'] = [
-                        !/^((?!baidu|61).)*\.iqiyi\.com/i.test(wnd.self.location.host),
+                        !/^((?!baidu|61|178).)*\.iqiyi\.com/i.test(wnd.self.location.host),
                         wnd.self.document.querySelector('span[data-flashplayerparam-flashurl]'),
                         true
                     ];
