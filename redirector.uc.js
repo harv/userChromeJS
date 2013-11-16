@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name            redirector.uc.js
-// @namespace       redirector@haoutil.tk
+// @namespace       redirector@haoutil.com
 // @description     Redirect your requests.
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
-// @homepage        http://haoutil.tk
-// @version         1.2.0
+// @homepage        http://haoutil.com
+// @version         1.3.0
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -15,8 +15,13 @@
         this.rules = [{
             from: "about:haoutil",                  // 需要重定向的地址
             to: "https://haoutil.googlecode.com",   // 目标地址
+            wildcard: false,                        // 可选，true 表示 from 是通配符
             regex: false,                           // 可选，true 表示 from 是正则表达式
-            resp: false                            // 可选，true 表示替换 response body
+            resp: false                             // 可选，true 表示替换 response body
+        },{
+            from: /^https?:\/\/www\.google\.com\/url\?.*url=([^&]+).*/i,
+            to: "$1",
+            regex: true
         },{
             from: /^http:\/\/(([^\.]+\.)?google\..+)/i,
             exclude: /google\.cn/i,                 // 可选，排除例外规则
@@ -27,13 +32,15 @@
     Redirector.prototype = {
         _cache: {
             url: [],
-            redirectUrl: []
+            redirectUrl: [],
+            clickUrl: []
         },
         classDescription: "Redirector content policy",
         classID: Components.ID("{1d5903f0-6b5b-4229-8673-76b4048c6675}"),
-        contractID: "@haoutil.tk/redirector/policy;1",
+        contractID: "@haoutil.com/redirector/policy;1",
         xpcom_categories: ["content-policy", "net-channel-event-sinks"],
         init: function() {
+            window.addEventListener("click", this, true);
             let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
             registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
             let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
@@ -43,17 +50,32 @@
             Services.obs.addObserver(this, "http-on-examine-response", false);
         },
         getRedirectUrl: function(url) {
+            url = decodeURIComponent(url);
             let index = this._cache.url.indexOf(url);
             if(index > -1)
                 return this._cache.redirectUrl[index];
             let redirectUrl = null
             for each (let rule in this.rules) {
-                let redirect = rule.regex
-                    ? rule.from.test(url) ? !(rule.exclude && rule.exclude.test(url)) : false
-                    : rule.from == url ? !(rule.exclude && rule.exclude == url) : false;
+                let regex, from, to, exclude;
+                if (rule.computed) {
+                    regex = rule.computed.regex; from = rule.computed.from; to = rule.computed.to; exclude = rule.computed.exclude;
+                } else {
+                    regex = false; from = rule.from; to = rule.to; exclude = rule.exclude;
+                    if (rule.wildcard) {
+                        regex = true;
+                        from = this.wildcardToRegex(rule.from);
+                        exclude = this.wildcardToRegex(rule.exclude);
+                    } else if (rule.regex) {
+                        regex = true;
+                    }
+                    rule.computed = {regex: regex, from: from, to: to, exclude: exclude};
+                }
+                let redirect = regex
+                    ? from.test(url) ? !(exclude && exclude.test(url)) : false
+                    : from == url ? !(exclude && exclude == url) : false;
                 if (redirect) {
                     redirectUrl = {
-                        url: rule.regex ? url.replace(rule.from, rule.to) : rule.to,
+                        url: regex ? url.replace(from, to) : to,
                         resp: rule.resp
                     };
                     break;
@@ -63,12 +85,15 @@
             this._cache.redirectUrl.push(redirectUrl);
             return redirectUrl;
         },
+        wildcardToRegex: function(wildcard) {
+            return new RegExp((wildcard + '').replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&').replace(/\\\*/g, '.*').replace(/\\\?/g, '.'), 'gi');
+        },
         getTarget: function(redirectUrl, callback) {
             NetUtil.asyncFetch(redirectUrl.url, function(inputStream, status) {
-                var binaryOutputStream = Cc['@mozilla.org/binaryoutputstream;1'].createInstance(Ci['nsIBinaryOutputStream']);
-                var storageStream = Cc['@mozilla.org/storagestream;1'].createInstance(Ci['nsIStorageStream']);
-                var count = inputStream.available();
-                var data = NetUtil.readInputStreamToString(inputStream, count);
+                let binaryOutputStream = Cc['@mozilla.org/binaryoutputstream;1'].createInstance(Ci['nsIBinaryOutputStream']);
+                let storageStream = Cc['@mozilla.org/storagestream;1'].createInstance(Ci['nsIStorageStream']);
+                let count = inputStream.available();
+                let data = NetUtil.readInputStreamToString(inputStream, count);
                 storageStream.init(512, count, null);
                 binaryOutputStream.setOutputStream(storageStream.getOutputStream(0));
                 binaryOutputStream.writeBytes(data, count);
@@ -78,8 +103,24 @@
                     callback();
             });
         },
+        // nsIDOMEventListener interface implementation
+        handleEvent: function(event) {
+            if (!event.ctrlKey && "click" === event.type && 1 === event.which) {
+                let target = event.target;
+                if(target && "A" === target.tagName && "_blank" === target.target && target.href) {
+                    this._cache.clickUrl.push(target.href);
+                }
+            }
+        },
         // nsIContentPolicy interface implementation
         shouldLoad: function(contentType, contentLocation, requestOrigin, context, mimeTypeGuess, extra) {
+            // don't redirect clicking links with "_blank" target attribute
+            // cause links will be loaded in current tab/window
+            let index = this._cache.clickUrl.indexOf(contentLocation.spec);
+            if (index > -1) {
+                this._cache.clickUrl.splice(index, 1);
+                return Ci.nsIContentPolicy.ACCEPT;
+            }
             // only redirect documents
             if (contentType != Ci.nsIContentPolicy.TYPE_DOCUMENT)
                 return Ci.nsIContentPolicy.ACCEPT;
@@ -103,7 +144,7 @@
         onChannelRedirect: function(oldChannel, newChannel, flags) {
             // only redirect documents
             if (!(newChannel.loadFlags & Ci.nsIChannel.LOAD_DOCUMENT_URI))
-                return; 
+                return;
             let newLocation = newChannel.URI.spec;
             if (!newLocation)
                 return;
