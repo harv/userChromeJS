@@ -5,7 +5,8 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.com
-// @version         1.3.0
+// @version         1.3.5.8
+// @updateURL     https://j.mozest.com/ucscript/script/112.meta.js
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -19,13 +20,15 @@
             regex: false,                           // 可选，true 表示 from 是正则表达式
             resp: false                             // 可选，true 表示替换 response body
         },{
-            from: /^https?:\/\/www\.google\.com\/url\?.*url=([^&]+).*/i,
-            to: "$1",
-            regex: true
-        },{
+            // google链接加密
             from: /^http:\/\/(([^\.]+\.)?google\..+)/i,
             exclude: /google\.cn/i,                 // 可选，排除例外规则
             to: "https://$1",
+            regex: true
+        },{
+            // google搜索结果禁止跳转
+            from: /^https?:\/\/www\.google\.com\/url\?.*url=([^&]*).*/i,
+            to: "$1",
             regex: true
         }];
     }
@@ -40,7 +43,7 @@
         contractID: "@haoutil.com/redirector/policy;1",
         xpcom_categories: ["content-policy", "net-channel-event-sinks"],
         init: function() {
-            window.addEventListener("click", this, true);
+            window.addEventListener("click", this, false);
             let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
             registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
             let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
@@ -49,8 +52,23 @@
             Services.obs.addObserver(this, "http-on-modify-request", false);
             Services.obs.addObserver(this, "http-on-examine-response", false);
         },
-        getRedirectUrl: function(url) {
-            url = decodeURIComponent(url);
+        destroy: function() {
+            window.removeEventListener("click", this, false);
+            let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+            registrar.unregisterFactory(this.classID, this);
+            let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
+            for each (let category in this.xpcom_categories)
+                catMan.deleteCategoryEntry(category, this.classDescription, false);
+            Services.obs.removeObserver(this, "http-on-modify-request", false);
+            Services.obs.removeObserver(this, "http-on-examine-response", false);
+        },
+        getRedirectUrl: function(originUrl) {
+            let url;
+            try {
+                url = decodeURIComponent(originUrl);
+            } catch(e) {
+                url = originUrl;
+            }
             let index = this._cache.url.indexOf(url);
             if(index > -1)
                 return this._cache.redirectUrl[index];
@@ -107,8 +125,15 @@
         handleEvent: function(event) {
             if (!event.ctrlKey && "click" === event.type && 1 === event.which) {
                 let target = event.target;
-                if(target && "A" === target.tagName && "_blank" === target.target && target.href) {
-                    this._cache.clickUrl.push(target.href);
+                while(target) {
+                    if (target.tagName && "BODY" === target.tagName.toUpperCase()) break;
+                    if (target.tagName && "A" === target.tagName.toUpperCase()
+                        && target.target && "_BLANK" === target.target.toUpperCase()
+                        && target.href) {
+                        this._cache.clickUrl.push(target.href);
+                        break;
+                    }
+                    target = target.parentNode;
                 }
             }
         },
@@ -166,7 +191,6 @@
             let redirectUrl = this.getRedirectUrl(newLocation);
             if (redirectUrl && !redirectUrl.resp) {
                 webNav.loadURI(redirectUrl.url, null, null, null, null);
-                throw Cr.NS_BASE_STREAM_WOULD_BLOCK;
             }
         },
         // nsIObserver interface implementation
@@ -232,5 +256,17 @@
         // nsISupports interface implementation
         QueryInterface: XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsISupports])
     };
-    new Redirector().init();
+    
+    var r = null;
+    if(location == 'chrome://browser/content/browser.xul') {
+        if (!r)
+            r = new Redirector();
+        r.init();
+    }
+    window.addEventListener('unload', function() {
+        if(location == 'chrome://browser/content/browser.xul') {
+            if (r)
+                r.destroy();
+        }
+    });
 })();

@@ -5,7 +5,7 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.tk
-// @version         1.4.5
+// @version         1.5.1
 // @updateUrl       https://j.mozest.com/zh-CN/ucscript/script/92.meta.js
 // @downloadUrl     https://j.mozest.com/zh-CN/ucscript/script/92.uc.js
 // ==/UserScript==
@@ -50,11 +50,11 @@
             },
             'letv': {
                 'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/letv.swf',
-                're': /http:\/\/.*letv[\w]*\.com\/(.*\/(?!live)((v2)?[\w]{4}|swf)player[^\.]*|[\w]*cloud)\.swf/i
+                're': /http:\/\/.*letv[\w]*\.com\/(hz|.*\/(?!(Live|seed))(S[\w]{2,3})?[\w]{4})Player[^\.]*\.swf/i
             },
-            'kletv': {
-                'player': 'http://player.haoutil.com/player/kletv.swf',
-                're': /http:\/\/player\.letvcdn\.com\/p\/.*\/1\/kletvplayer\.swf/i
+            'letvskin': {
+                'player': 'http://player.letvcdn.com/p/201403/05/1456/newplayer/1/SLetvPlayer.swf',
+                're': /http:\/\/.*letv[\w]*\.com\/p\/\d+\/\d+\/(?!1456)\d*\/newplayer\/\d+\/SLetvPlayer\.swf/i
             },
             'pplive': {
                 'player': 'https://haoutil.googlecode.com/svn/trunk/player/pplive.swf',
@@ -63,6 +63,14 @@
             'pplive_live': {
                 'player': 'https://haoutil.googlecode.com/svn/trunk/player/pplive_live.swf',
                 're': /http:\/\/player\.pplive\.cn\/live\/.*\/player4live2\.swf/i
+            },
+            'sohu': {
+                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/sohu.swf',
+                're': /http:\/\/tv\.sohu\.com\/upload\/swf(\/p2p(\/yc)?)?\/\d+\/(main|playershell)\.swf/i
+            },
+            'pps': {
+                'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/pps.swf',
+                're': /http:\/\/www\.iqiyi\.com\/player\/cupid\/.*\/pps[\w]+.swf/i
             }
         },
         os: Cc['@mozilla.org/observer-service;1']
@@ -73,7 +81,7 @@
                 var wnd = this.getWindowForRequest(aSubject);
                 if(wnd) {
                     site['cond'] = [
-                        !/^((?!baidu|61|178).)*\.iqiyi\.com/i.test(wnd.self.location.host),
+                        !/(^((?!baidu|61|178).)*\.iqiyi\.com|pps\.tv)/i.test(wnd.self.location.host),
                         wnd.self.document.querySelector('span[data-flashplayerparam-flashurl]'),
                         true
                     ];
