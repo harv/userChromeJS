@@ -5,8 +5,7 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.com
-// @version         1.3.5.8
-// @updateURL     https://j.mozest.com/ucscript/script/112.meta.js
+// @version         1.4
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -34,9 +33,8 @@
     }
     Redirector.prototype = {
         _cache: {
-            url: [],
-            redirectUrl: [],
-            clickUrl: []
+            redirectUrl: {},
+            clickUrl: {}
         },
         classDescription: "Redirector content policy",
         classID: Components.ID("{1d5903f0-6b5b-4229-8673-76b4048c6675}"),
@@ -69,10 +67,11 @@
             } catch(e) {
                 url = originUrl;
             }
-            let index = this._cache.url.indexOf(url);
-            if(index > -1)
-                return this._cache.redirectUrl[index];
-            let redirectUrl = null
+            let redirectUrl = this._cache.redirectUrl[url];
+            if(typeof redirectUrl != "undefined") {
+                return redirectUrl;
+            }
+            redirectUrl = null;
             for each (let rule in this.rules) {
                 let regex, from, to, exclude;
                 if (rule.computed) {
@@ -99,8 +98,7 @@
                     break;
                 }
             }
-            this._cache.url.push(url);
-            this._cache.redirectUrl.push(redirectUrl);
+            this._cache.redirectUrl[url] = redirectUrl;
             return redirectUrl;
         },
         wildcardToRegex: function(wildcard) {
@@ -130,7 +128,7 @@
                     if (target.tagName && "A" === target.tagName.toUpperCase()
                         && target.target && "_BLANK" === target.target.toUpperCase()
                         && target.href) {
-                        this._cache.clickUrl.push(target.href);
+                        this._cache.clickUrl[target.href] = true;
                         break;
                     }
                     target = target.parentNode;
@@ -141,9 +139,8 @@
         shouldLoad: function(contentType, contentLocation, requestOrigin, context, mimeTypeGuess, extra) {
             // don't redirect clicking links with "_blank" target attribute
             // cause links will be loaded in current tab/window
-            let index = this._cache.clickUrl.indexOf(contentLocation.spec);
-            if (index > -1) {
-                this._cache.clickUrl.splice(index, 1);
+            if (this._cache.clickUrl[contentLocation.spec]) {
+                delete this._cache.clickUrl[contentLocation.spec];
                 return Ci.nsIContentPolicy.ACCEPT;
             }
             // only redirect documents

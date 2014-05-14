@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name            redirector_ui.uc.js
-// @namespace       redirector@haoutil.com
+// @name            redirector.uc.js
+// @namespace       redirector@haoutil.tk
 // @description     Redirect your requests.
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.com
-// @version         1.3.5
+// @version         1.4
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -21,9 +21,8 @@
     }
     Redirector.prototype = {
         _cache: {
-            url: [],
-            redirectUrl: [],
-            clickUrl: []
+            redirectUrl: {},
+            clickUrl: {}
         },
         classDescription: "Redirector content policy",
         classID: Components.ID("{1d5903f0-6b5b-4229-8673-76b4048c6675}"),
@@ -51,13 +50,15 @@
             Services.obs.removeObserver(this, "http-on-modify-request", false);
             Services.obs.removeObserver(this, "http-on-examine-response", false);
         },
-        reload: function() {
+        clearCache: function() {
             // clear cache
             this._cache = {
-                url: [],
-                redirectUrl: [],
-                clickUrl: []
+                redirectUrl: {},
+                clickUrl: {}
             };
+        },
+        reload: function() {
+        	this.clearCache();
             this.loadRule();
             this.clearItems();
             this.buildItems();
@@ -93,11 +94,7 @@
                 let item = document.getElementById("redirector-item-" + i);
                 if (item) item.setAttribute("checked", this.rules[i].state);
                 // clear cache
-                this._cache = {
-                    url: [],
-                    redirectUrl: [],
-                    clickUrl: []
-                };
+                this.clearCache();
             } else {
                 let menuitems = document.querySelectorAll("menuitem[id^='redirector-item-']");
                 this.state = !this.state;
@@ -217,10 +214,10 @@
             } catch(e) {
                 url = originUrl;
             }
-            let index = this._cache.url.indexOf(url);
-            if(index > -1)
-                return this._cache.redirectUrl[index];
-            let redirectUrl = null
+            let redirectUrl = this._cache.redirectUrl[url];
+            if(typeof redirectUrl != "undefined")
+                return redirectUrl;
+            redirectUrl = null;
             for each (let rule in this.rules) {
                 if (rule.state == null) rule.state = true;
                 if (!rule.state) continue;
@@ -249,8 +246,7 @@
                     break;
                 }
             }
-            this._cache.url.push(url);
-            this._cache.redirectUrl.push(redirectUrl);
+            this._cache.redirectUrl[url] = redirectUrl;
             return redirectUrl;
         },
         wildcardToRegex: function(wildcard) {
@@ -280,7 +276,7 @@
                     if (target.tagName && "A" === target.tagName.toUpperCase()
                         && target.target && "_BLANK" === target.target.toUpperCase()
                         && target.href) {
-                        this._cache.clickUrl.push(target.href);
+                        this._cache.clickUrl[target.href] = true;
                         break;
                     }
                     target = target.parentNode;
@@ -291,9 +287,8 @@
         shouldLoad: function(contentType, contentLocation, requestOrigin, context, mimeTypeGuess, extra) {
             // don't redirect clicking links with "_blank" target attribute
             // cause links will be loaded in current tab/window
-            let index = this._cache.clickUrl.indexOf(contentLocation.spec);
-            if (index > -1) {
-                this._cache.clickUrl.splice(index, 1);
+            if (this._cache.clickUrl[contentLocation.spec]) {
+                delete this._cache.clickUrl[contentLocation.spec];
                 return Ci.nsIContentPolicy.ACCEPT;
             }
             // only redirect documents
