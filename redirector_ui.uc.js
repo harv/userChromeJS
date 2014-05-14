@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name            redirector.uc.js
-// @namespace       redirector@haoutil.tk
+// @name            redirector_ui.uc.js
+// @namespace       redirector@haoutil.com
 // @description     Redirect your requests.
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
