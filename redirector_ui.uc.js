@@ -5,7 +5,7 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.com
-// @version         1.4.1
+// @version         1.4.5
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -242,7 +242,9 @@
                     : from == url ? !(exclude && exclude == url) : false;
                 if (redirect) {
                     redirectUrl = {
-                        url: regex ? url.replace(from, to) : to,
+                        url : typeof to == "function"
+                            ? regex ? to(url.match(from)) : to(from)
+                            : regex ? url.replace(from, to) : to,
                         resp: rule.resp
                     };
                     break;
@@ -252,7 +254,7 @@
             return redirectUrl;
         },
         wildcardToRegex: function(wildcard) {
-            return new RegExp((wildcard + '').replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&').replace(/\\\*/g, '.*').replace(/\\\?/g, '.'), 'gi');
+            return new RegExp((wildcard + "").replace(new RegExp("[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]", "g"), "\\$&").replace(/\\\*/g, "(.*)").replace(/\\\?/g, "."), "i");
         },
         getTarget: function(redirectUrl, callback) {
             NetUtil.asyncFetch(redirectUrl.url, function(inputStream, status) {

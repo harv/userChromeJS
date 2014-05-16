@@ -2,10 +2,12 @@ rules = [{
     name: "about:haoutil",                  // 规则名称
     from: "about:haoutil",                  // 需要重定向的地址
     to: "https://haoutil.googlecode.com",   // 目标地址
+                                            // 支持函数(function(matches){}),返回必须是字符串
+                                            // 参数 matches: 正则,匹配结果数组(match函数结果); 通配符,整个网址和(*)符号匹配结果组成的数组; 字符串,整个网址
     wildcard: false,                        // 可选，true 表示 from 是通配符
     regex: false,                           // 可选，true 表示 from 是正则表达式
     resp: false,                            // 可选，true 表示替换 response body
-    state: false                             // 可选，true 表示该条规则生效
+    state: false                            // 可选，true 表示该条规则生效
 },{
     name: "google链接加密",
     from: /^http:\/\/(([^\.]+\.)?google\..+)/i,

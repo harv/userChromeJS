@@ -5,7 +5,7 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.com
-// @version         1.4
+// @version         1.4.5
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -15,6 +15,8 @@
         this.rules = [{
             from: "about:haoutil",                  // 需要重定向的地址
             to: "https://haoutil.googlecode.com",   // 目标地址
+                                                    // 支持函数(function(matches){}),返回必须是字符串
+                                                    // 参数 matches: 正则,匹配结果数组(match函数结果); 通配符,整个网址和(*)符号匹配结果组成的数组; 字符串,整个网址
             wildcard: false,                        // 可选，true 表示 from 是通配符
             regex: false,                           // 可选，true 表示 from 是正则表达式
             resp: false                             // 可选，true 表示替换 response body
@@ -92,7 +94,9 @@
                     : from == url ? !(exclude && exclude == url) : false;
                 if (redirect) {
                     redirectUrl = {
-                        url: regex ? url.replace(from, to) : to,
+                        url : typeof to == "function"
+                            ? regex ? to(url.match(from)) : to(from)
+                            : regex ? url.replace(from, to) : to,
                         resp: rule.resp
                     };
                     break;
@@ -102,7 +106,7 @@
             return redirectUrl;
         },
         wildcardToRegex: function(wildcard) {
-            return new RegExp((wildcard + '').replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&').replace(/\\\*/g, '.*').replace(/\\\?/g, '.'), 'gi');
+            return new RegExp((wildcard + "").replace(new RegExp("[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]", "g"), "\\$&").replace(/\\\*/g, "(.*)").replace(/\\\?/g, "."), "i");
         },
         getTarget: function(redirectUrl, callback) {
             NetUtil.asyncFetch(redirectUrl.url, function(inputStream, status) {
