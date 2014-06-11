@@ -5,7 +5,7 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.tk
-// @version         1.5.1
+// @version         1.5.3
 // @updateUrl       https://j.mozest.com/zh-CN/ucscript/script/92.meta.js
 // @downloadUrl     https://j.mozest.com/zh-CN/ucscript/script/92.uc.js
 // ==/UserScript==
@@ -16,7 +16,7 @@
         SITES: {
             'youku_loader': {
                 'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/loader.swf',
-                're': /http:\/\/static\.youku\.com(\/v[\d\.]+)?\/v\/swf\/loader\.swf/i
+                're': /http:\/\/static\.youku\.com(\/v[\d\.]+)?\/v\/swf\/loaders?\.swf/i
             },
             'youku_player': {
                 'player': 'https://haoutil.googlecode.com/svn/trunk/player/testmod/player.swf',
