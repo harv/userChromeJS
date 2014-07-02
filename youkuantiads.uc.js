@@ -5,9 +5,7 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.tk
-// @version         1.5.4
-// @updateUrl       https://j.mozest.com/zh-CN/ucscript/script/92.meta.js
-// @downloadUrl     https://j.mozest.com/zh-CN/ucscript/script/92.uc.js
+// @version         1.6.0
 // ==/UserScript==
 (function() {
     // YoukuAntiADs, request observer
@@ -156,6 +154,11 @@
             if(aTopic != 'http-on-examine-response') return;
 
             var http = aSubject.QueryInterface(Ci.nsIHttpChannel);
+
+            var aVisitor = new HttpHeaderVisitor();
+            http.visitResponseHeaders(aVisitor);
+            if (!aVisitor.isFalsh()) return;
+
             for(var i in this.SITES) {
                 var site = this.SITES[i];
                 if(site['re'].test(http.URI.spec)) {
@@ -211,6 +214,22 @@
         },
         onDataAvailable: function(request, context) {
             this.originalListener.onDataAvailable(request, context, this.site['storageStream'].newInputStream(0), 0, this.site['count']);
+        }
+    };
+
+    function HttpHeaderVisitor() {
+        this._isFlash = false;
+    }
+    HttpHeaderVisitor.prototype = {
+        visitHeader: function(aHeader, aValue) {
+            if (aHeader.indexOf("Content-Type") !== -1) {
+                if (aValue.indexOf("application/x-shockwave-flash") !== -1) {
+                    this._isFlash = true;
+                }
+            }
+        },
+        isFalsh: function() {
+            return this._isFlash;
         }
     };
 
