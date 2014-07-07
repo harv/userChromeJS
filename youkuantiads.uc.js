@@ -5,7 +5,9 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.tk
-// @version         1.6.0
+// @version         1.6.1
+// @updateUrl       https://j.mozest.com/zh-CN/ucscript/script/92.meta.js
+// @downloadUrl     https://j.mozest.com/zh-CN/ucscript/script/92.uc.js
 // ==/UserScript==
 (function() {
     // YoukuAntiADs, request observer
@@ -157,7 +159,7 @@
 
             var aVisitor = new HttpHeaderVisitor();
             http.visitResponseHeaders(aVisitor);
-            if (!aVisitor.isFalsh()) return;
+            if (!aVisitor.isFlash()) return;
 
             for(var i in this.SITES) {
                 var site = this.SITES[i];
@@ -228,7 +230,7 @@
                 }
             }
         },
-        isFalsh: function() {
+        isFlash: function() {
             return this._isFlash;
         }
     };
