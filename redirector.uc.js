@@ -5,7 +5,10 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.com
-// @version         1.4.5
+// @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector.uc.js
+// @startup         window.Redirector.init();
+// @shutdown        window.Redirector.destroy();
+// @version         1.4.6
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -19,7 +22,8 @@
                                                     // 参数 matches: 正则,匹配结果数组(match函数结果); 通配符,整个网址和(*)符号匹配结果组成的数组; 字符串,整个网址
             wildcard: false,                        // 可选，true 表示 from 是通配符
             regex: false,                           // 可选，true 表示 from 是正则表达式
-            resp: false                             // 可选，true 表示替换 response body
+            resp: false,                            // 可选，true 表示替换 response body
+            decode: false                           // 可选，true 表示尝试对 from 解码
         },{
             // google链接加密
             from: /^http:\/\/(([^\.]+\.)?google\..+)/i,
@@ -63,40 +67,36 @@
             Services.obs.removeObserver(this, "http-on-examine-response", false);
         },
         getRedirectUrl: function(originUrl) {
-            let url;
-            try {
-                url = decodeURIComponent(originUrl);
-            } catch(e) {
-                url = originUrl;
-            }
+            let url = originUrl;
             let redirectUrl = this._cache.redirectUrl[url];
             if(typeof redirectUrl != "undefined") {
                 return redirectUrl;
             }
             redirectUrl = null;
+            let regex, from, to, exclude, decode;
             for each (let rule in this.rules) {
-                let regex, from, to, exclude;
                 if (rule.computed) {
-                    regex = rule.computed.regex; from = rule.computed.from; to = rule.computed.to; exclude = rule.computed.exclude;
+                    regex = rule.computed.regex; from = rule.computed.from; to = rule.computed.to; exclude = rule.computed.exclude; decode = rule.computed.decode;
                 } else {
-                    regex = false; from = rule.from; to = rule.to; exclude = rule.exclude;
+                    regex = rule.regex || rule.wildcard; from = rule.from; to = rule.to; exclude = rule.exclude; decode = rule.decode;
                     if (rule.wildcard) {
-                        regex = true;
                         from = this.wildcardToRegex(rule.from);
                         exclude = this.wildcardToRegex(rule.exclude);
-                    } else if (rule.regex) {
-                        regex = true;
                     }
-                    rule.computed = {regex: regex, from: from, to: to, exclude: exclude};
+                    rule.computed = {regex: regex, from: from, to: to, exclude: exclude, decode: decode};
+                }
+                if (decode) {
+                    url = this.decodeUrl(originUrl);
                 }
                 let redirect = regex
                     ? from.test(url) ? !(exclude && exclude.test(url)) : false
                     : from == url ? !(exclude && exclude == url) : false;
                 if (redirect) {
+                    let reurl = typeof to == "function"
+                        ? regex ? to(url.match(from)) : to(from)
+                        : regex ? url.replace(from, to) : to;
                     redirectUrl = {
-                        url : typeof to == "function"
-                            ? regex ? to(url.match(from)) : to(from)
-                            : regex ? url.replace(from, to) : to,
+                        url : decode ? reurl : this.decodeUrl(reurl),	// 避免二次解码
                         resp: rule.resp
                     };
                     break;
@@ -104,6 +104,15 @@
             }
             this._cache.redirectUrl[url] = redirectUrl;
             return redirectUrl;
+        },
+        decodeUrl: function(encodedUrl) {
+            let decodedUrl;
+            try {
+                decodedUrl = decodeURIComponent(encodedUrl);
+            } catch(e) {
+                decodedUrl = encodedUrl;
+            }
+            return decodedUrl;
         },
         wildcardToRegex: function(wildcard) {
             return new RegExp((wildcard + "").replace(new RegExp("[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]", "g"), "\\$&").replace(/\\\*/g, "(.*)").replace(/\\\?/g, "."), "i");
@@ -144,7 +153,7 @@
             // don't redirect clicking links with "_blank" target attribute
             // cause links will be loaded in current tab/window
             if (this._cache.clickUrl[contentLocation.spec]) {
-                delete this._cache.clickUrl[contentLocation.spec];
+                this._cache.clickUrl[contentLocation.spec] = false;
                 return Ci.nsIContentPolicy.ACCEPT;
             }
             // only redirect documents
@@ -257,17 +266,12 @@
         // nsISupports interface implementation
         QueryInterface: XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsISupports])
     };
-    
-    var r = null;
-    if(location == 'chrome://browser/content/browser.xul') {
-        if (!r)
-            r = new Redirector();
-        r.init();
+
+    if (window.Redirector) {
+        window.Redirector.destroy();
+        delete window.Redirector;
     }
-    window.addEventListener('unload', function() {
-        if(location == 'chrome://browser/content/browser.xul') {
-            if (r)
-                r.destroy();
-        }
-    });
+
+    window.Redirector = new Redirector();
+    window.Redirector.init();
 })();
