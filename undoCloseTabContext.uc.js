@@ -18,7 +18,13 @@ location == "chrome://browser/content/browser.xul" && (function undoCloseTabCont
     popup.setAttribute("tooltip", "bhTooltip");
     popup.setAttribute("popupsinherittooltip", "true");
 
-    popup._getClosedTabCount = HistoryMenu.prototype._getClosedTabCount;
+    popup._getClosedTabCount = HistoryMenu.prototype._getClosedTabCount;	// fx 35+
+    if (!popup._getClosedTabCount) {
+    	popup._ss = Cc["@mozilla.org/browser/sessionstore;1"].getService(Ci.nsISessionStore);
+    	popup._getClosedTabCount = function() {
+    		return popup._ss.getClosedTabCount(window);
+    	}
+    }
     popup.populateUndoSubmenu = eval("(" + HistoryMenu.prototype.populateUndoSubmenu.toString().replace(/\._rootElt.*/,";").replace(/undoMenu\.firstChild/, "this") + ")");
 
     // replace right click context menu when has recently closed tabs
