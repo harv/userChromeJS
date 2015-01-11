@@ -6,9 +6,9 @@
 // @author          harv.c
 // @homepage        http://haoutil.com
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector.uc.js
-// @startup         window.Redirector.init();
-// @shutdown        window.Redirector.destroy();
-// @version         1.4.6
+// @startup         Services.redirector.init(window);
+// @shutdown        Services.redirector.destroy(window);
+// @version         1.5
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -46,25 +46,29 @@
         classID: Components.ID("{1d5903f0-6b5b-4229-8673-76b4048c6675}"),
         contractID: "@haoutil.com/redirector/policy;1",
         xpcom_categories: ["content-policy", "net-channel-event-sinks"],
-        init: function() {
+        init: function(window) {
             window.addEventListener("click", this, false);
             let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-            registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
-            let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
-            for each (let category in this.xpcom_categories)
-                catMan.addCategoryEntry(category, this.classDescription, this.contractID, false, true);
-            Services.obs.addObserver(this, "http-on-modify-request", false);
-            Services.obs.addObserver(this, "http-on-examine-response", false);
+            if (!registrar.isCIDRegistered(this.classID)) {
+                registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
+                let catMan = XPCOMUtils.categoryManager;
+                for each (let category in this.xpcom_categories)
+                    catMan.addCategoryEntry(category, this.contractID, this.contractID, false, true);
+                Services.obs.addObserver(this, "http-on-modify-request", false);
+                Services.obs.addObserver(this, "http-on-examine-response", false);
+            }
         },
-        destroy: function() {
+        destroy: function(window) {
             window.removeEventListener("click", this, false);
             let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-            registrar.unregisterFactory(this.classID, this);
-            let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
-            for each (let category in this.xpcom_categories)
-                catMan.deleteCategoryEntry(category, this.classDescription, false);
-            Services.obs.removeObserver(this, "http-on-modify-request", false);
-            Services.obs.removeObserver(this, "http-on-examine-response", false);
+            if (registrar.isCIDRegistered(this.classID)) {
+                registrar.unregisterFactory(this.classID, this);
+                let catMan = XPCOMUtils.categoryManager;
+                for each (let category in this.xpcom_categories)
+                    catMan.deleteCategoryEntry(category, this.contractID, false);
+                Services.obs.removeObserver(this, "http-on-modify-request", false);
+                Services.obs.removeObserver(this, "http-on-examine-response", false);
+            }
         },
         getRedirectUrl: function(originUrl) {
             let url = originUrl;
@@ -115,6 +119,8 @@
             return decodedUrl;
         },
         wildcardToRegex: function(wildcard) {
+            if (!wildcard)
+                return null;
             return new RegExp((wildcard + "").replace(new RegExp("[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]", "g"), "\\$&").replace(/\\\*/g, "(.*)").replace(/\\\?/g, "."), "i");
         },
         getTarget: function(redirectUrl, callback) {
@@ -267,11 +273,10 @@
         QueryInterface: XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsISupports])
     };
 
-    if (window.Redirector) {
-        window.Redirector.destroy();
-        delete window.Redirector;
+    if (!Services.redirector) {
+        XPCOMUtils.defineLazyGetter(Services, "redirector", function() {
+            return new Redirector();
+        });
     }
-
-    window.Redirector = new Redirector();
-    window.Redirector.init();
+    Services.redirector.init(window);
 })();
