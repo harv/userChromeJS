@@ -7,7 +7,8 @@ rules = [{
     wildcard: false,                        // 可选，true 表示 from 是通配符
     regex: false,                           // 可选，true 表示 from 是正则表达式
     resp: false,                            // 可选，true 表示替换 response body
-    state: false                            // 可选，true 表示该条规则生效
+    decode: false,                          // 可选，true 表示尝试对 from 解码
+    state: true                             // 可选，true 表示该条规则生效
 },{
     name: "google链接加密",
     from: /^http:\/\/(([^\.]+\.)?google\..+)/i,

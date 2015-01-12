@@ -5,7 +5,10 @@
 // @include         chrome://browser/content/browser.xul
 // @author          harv.c
 // @homepage        http://haoutil.com
-// @version         1.4.5
+// @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
+// @startup         Services.redirector.init(window);
+// @shutdown        Services.redirector.destroy(window, true);
+// @version         1.5
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -13,8 +16,8 @@
     Cu.import("resource://gre/modules/NetUtil.jsm");
     function Redirector() {
     	this.addIcon = true;                        // 是否添加按钮
-        this.state = false;                          // 是否启用脚本
-        this.rulesFile = "_redirector.js";
+        this.state = true;                          // 是否启用脚本
+        this.rulesFile = "local\\_redirector.js";
         this.rules = [];
         this.enableIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABZ0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMDvo9WkAAAI2SURBVDhPbVPNahNRGP3uzORvMhNCy7RJmGziICEtZOuiNbjRB5CgD+AyG1e6i4ib0m4KbhRKEemu1oUgbgTzAhXBjd2IUJBuopKCGjJzPSe5GWLpB5f5fs45uffcG7kYzWZzuVAo9DKZzJHjOB+5mBeLxV4YhksGdmlYnuc9tG37HLkG8Qz5wLKsAXP2OCuVSg+IJSGNTqfj+L5/hFTncrlBpVLp9Pv9FMScvWw2O0Cpie12u/ZsikDjCT4aW9/5vrpa1CLl+UrCsICvIo5C+IEdYg1HJIqiK0qpvyC/01qrROQZCHq+YqUSrNPEtm8TT5F8Pv+WHHIF5myjSOr1+hoBCwKPkN8dO859rdTPRKnRWRB4xMDMdXLg2bZA7TPOdswBYy6A76ZpCciv2fvl+1dNS8ghV+Dwb7i7Z/qLAntYfWz/KdY4tqxP6KfGkkOu4I4nKJ6b/qLAEMQJtk8fDs5dt2Ig0yAHAhMKfEXy3vT/O8Ifz2vh+wNHOB2JrBjINHAbH8gVuP8CamM4GnCwKMB6Ylk91rFtv2TNaDQaK3hgY3iwL0EQbMBRDUd3ObwocBJFORzhG+oEjOvsua67Sw65rHkTr9CIsZsuyBsA38M3PTOu8hp7eAs38JTvEEuOGYu0Wq0lkE+wrRgvbAtPu2xGabTb7TLezBYwCXbwhRwzmkWtVluG6huk/CONYNIhvHnMBbOYw0fRxBA7JV0W1Wr1FskQGaLELSoKDtnDmW/OUPMQ+QfYiMmtP0QQSQAAAABJRU5ErkJggg==";
         this.disableIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwQAADsEBuJFr7QAAABZ0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMDvo9WkAAAHuSURBVDhPfVM7S4JRGP6832kKFVOLnIwckuZWaWrwfkG0hn5CY9HWEDgE4qBD0BSFuLRESdjWWIRTQ0u1BVEYZc9zPJ/5KfXAy3nPezvv7Sjj8Hq9UavVWjUajV1QD/RhMpnuIKt4PJ6wNJtEOBx22my2Q51O1zcYDJ9ms7mNswqqgb/W6/Vf0H05HI6DUChkkW4DSOcbOsOgGggEvFI1RDAYnIXNEdi+0+m8iEajpoEGgFODzlCsx+PxuWQyuaxSNptdLJfLLmmq2O32LRy03RMCvLYkU6vznk6nG6D+GL1nMpkN4QCgH02U1GNWfL2KyyfqmqESxmqAIjPI5/Nr4F9Ab8Vi0Uobn88XYcYul2tXQYe7aNIVFYQagM5SRNklZaVSaVqKFEznHn4dBuix21I+mkFL8me8o4SmNBFA1icI8igCgKlJ+TBAKpW6xfkqnfdjsZhmdPA5VQN0kUFbyjUlFAqFAPhn0FMul9OM1mKxsPSOaCIaMtFEtQfgN3lHFtwBATYRRx97scPVFWPERTNGNUAikTDj/gD6RpAVyvB6azhGYmSR+FoEhqtwnBJKALIFyqiD7TZEv4tEuN1uyB3qKtfVckbh9/vnsUDHYDn/c80qEwyCMkQmf30mEla5MuE8iv++M9Z+7Dsryg+nccGV4H85ngAAAABJRU5ErkJggg==";
@@ -28,29 +31,35 @@
         classID: Components.ID("{1d5903f0-6b5b-4229-8673-76b4048c6675}"),
         contractID: "@haoutil.com/redirector/policy;1",
         xpcom_categories: ["content-policy", "net-channel-event-sinks"],
-        init: function() {
+        init: function(window) {
             this.loadRule();
             this.drawUI();
         	if (!this.state) return;
             window.addEventListener("click", this, false);
             let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-            registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
-            let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
-            for each (let category in this.xpcom_categories)
-                catMan.addCategoryEntry(category, this.classDescription, this.contractID, false, true);
-            Services.obs.addObserver(this, "http-on-modify-request", false);
-            Services.obs.addObserver(this, "http-on-examine-response", false);
+            if (!registrar.isCIDRegistered(this.classID)) {
+                registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
+                let catMan = XPCOMUtils.categoryManager;
+                for each (let category in this.xpcom_categories)
+                    catMan.addCategoryEntry(category, this.contractID, this.contractID, false, true);
+                Services.obs.addObserver(this, "http-on-modify-request", false);
+                Services.obs.addObserver(this, "http-on-examine-response", false);
+            }
         },
-        destroy: function() {
-        	if (this.state) return;
+        destroy: function(window, shouldDestoryUI) {
+        	if (shouldDestoryUI) {
+        		this.destoryUI();
+        	}
             window.removeEventListener("click", this, false);
             let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-            registrar.unregisterFactory(this.classID, this);
-            let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
-            for each (let category in this.xpcom_categories)
-                catMan.deleteCategoryEntry(category, this.classDescription, false);
-            Services.obs.removeObserver(this, "http-on-modify-request", false);
-            Services.obs.removeObserver(this, "http-on-examine-response", false);
+            if (registrar.isCIDRegistered(this.classID)) {
+                registrar.unregisterFactory(this.classID, this);
+                let catMan = XPCOMUtils.categoryManager;
+                for each (let category in this.xpcom_categories)
+                    catMan.deleteCategoryEntry(category, this.contractID, false);
+                Services.obs.removeObserver(this, "http-on-modify-request", false);
+                Services.obs.removeObserver(this, "http-on-examine-response", false);
+            }
         },
         clearCache: function() {
             // clear cache
@@ -101,10 +110,10 @@
                 let menuitems = document.querySelectorAll("menuitem[id^='redirector-item-']");
                 this.state = !this.state;
                 if (this.state) {
-                    this.init();
+                    this.init(window);
                     Object.keys(menuitems).forEach(function(n) menuitems[n].setAttribute("disabled", false));
                 } else {
-                    this.destroy();
+                    this.destroy(window);
                     Object.keys(menuitems).forEach(function(n) menuitems[n].setAttribute("disabled", true));
                 }
                 // update checkbox state
@@ -125,15 +134,15 @@
                 let icon = document.getElementById("urlbar-icons").appendChild(document.createElement("image"));
                 icon.setAttribute("id", "redirector-icon");
                 icon.setAttribute("context", "redirector-menupopup");
-                icon.setAttribute("onclick", "Redirector.iconClick(event);");
+                icon.setAttribute("onclick", "Services.redirector.iconClick(event);");
                 icon.setAttribute("tooltiptext", "Redirector");
                 icon.setAttribute("style", "padding: 0px 2px; list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
                 // add menu
                 let xml = '\
                     <menupopup id="redirector-menupopup">\
-                        <menuitem label="Enable" id="redirector-toggle" type="checkbox" autocheck="false" key="redirector-toggle-key" checked="' + this.state + '" oncommand="Redirector.toggle();" />\
-                        <menuitem label="Reload" id="redirector-reload" oncommand="Redirector.reload();"/>\
-                        <menuitem label="Edit" id="redirector-edit" oncommand="Redirector.edit();"/>\
+                        <menuitem label="Enable" id="redirector-toggle" type="checkbox" autocheck="false" key="redirector-toggle-key" checked="' + this.state + '" oncommand="Services.redirector.toggle();" />\
+                        <menuitem label="Reload" id="redirector-reload" oncommand="Services.redirector.reload();"/>\
+                        <menuitem label="Edit" id="redirector-edit" oncommand="Services.redirector.edit();"/>\
                         <menuseparator id="redirector-sepalator"/>\
                     </menupopup>\
                 ';
@@ -149,9 +158,21 @@
                 // add shortcuts
                 let key = document.getElementById("mainKeyset").appendChild(document.createElement("key"));
                 key.setAttribute("id", "redirector-toggle-key");
-                key.setAttribute("oncommand", "Redirector.toggle();");
+                key.setAttribute("oncommand", "Services.redirector.toggle();");
                 key.setAttribute("key", "r");
                 key.setAttribute("modifiers", "shift");
+            }
+        },
+        destoryUI: function() {
+        	let icon = document.getElementById("redirector-icon");
+            if (icon) {
+            	icon.parentNode.removeChild(icon);
+            	delete icon;
+            }
+            let menu = document.getElementById("redirector-menupopup");
+            if (menu) {
+            	menu.parentNode.removeChild(menu);
+            	delete menu;
             }
         },
         iconClick: function(event) {
@@ -205,46 +226,43 @@
                 menuitem.setAttribute("type", "checkbox");
                 menuitem.setAttribute("autocheck", "false");
                 menuitem.setAttribute("checked", this.rules[i].state != null ? this.rules[i].state : true);
-                menuitem.setAttribute("oncommand", "Redirector.toggle('"+ i +"');");
+                menuitem.setAttribute("oncommand", "Services.redirector.toggle('"+ i +"');");
                 menuitem.setAttribute("disabled", !this.state);
             }
         },
         getRedirectUrl: function(originUrl) {
-            let url;
-            try {
-                url = decodeURIComponent(originUrl);
-            } catch(e) {
-                url = originUrl;
-            }
+            let url = originUrl;
             let redirectUrl = this._cache.redirectUrl[url];
-            if(typeof redirectUrl != "undefined")
+            if(typeof redirectUrl != "undefined") {
                 return redirectUrl;
+            }
             redirectUrl = null;
+            let regex, from, to, exclude, decode;
             for each (let rule in this.rules) {
-                if (rule.state == null) rule.state = true;
+                if (typeof rule.state == "undefined") rule.state = true;
                 if (!rule.state) continue;
-                let regex, from, to, exclude;
                 if (rule.computed) {
-                    regex = rule.computed.regex; from = rule.computed.from; to = rule.computed.to; exclude = rule.computed.exclude;
+                    regex = rule.computed.regex; from = rule.computed.from; to = rule.computed.to; exclude = rule.computed.exclude; decode = rule.computed.decode;
                 } else {
-                    regex = false; from = rule.from; to = rule.to; exclude = rule.exclude;
+                    regex = rule.regex || rule.wildcard; from = rule.from; to = rule.to; exclude = rule.exclude; decode = rule.decode;
                     if (rule.wildcard) {
-                        regex = true;
                         from = this.wildcardToRegex(rule.from);
                         exclude = this.wildcardToRegex(rule.exclude);
-                    } else if (rule.regex) {
-                        regex = true;
                     }
-                    rule.computed = {regex: regex, from: from, to: to, exclude: exclude};
+                    rule.computed = {regex: regex, from: from, to: to, exclude: exclude, decode: decode};
+                }
+                if (decode) {
+                    url = this.decodeUrl(originUrl);
                 }
                 let redirect = regex
                     ? from.test(url) ? !(exclude && exclude.test(url)) : false
                     : from == url ? !(exclude && exclude == url) : false;
                 if (redirect) {
+                    let reurl = typeof to == "function"
+                        ? regex ? to(url.match(from)) : to(from)
+                        : regex ? url.replace(from, to) : to;
                     redirectUrl = {
-                        url : typeof to == "function"
-                            ? regex ? to(url.match(from)) : to(from)
-                            : regex ? url.replace(from, to) : to,
+                        url : decode ? reurl : this.decodeUrl(reurl),   // 避免二次解码
                         resp: rule.resp
                     };
                     break;
@@ -253,7 +271,18 @@
             this._cache.redirectUrl[url] = redirectUrl;
             return redirectUrl;
         },
+        decodeUrl: function(encodedUrl) {
+            let decodedUrl;
+            try {
+                decodedUrl = decodeURIComponent(encodedUrl);
+            } catch(e) {
+                decodedUrl = encodedUrl;
+            }
+            return decodedUrl;
+        },
         wildcardToRegex: function(wildcard) {
+            if (!wildcard)
+                return null;
             return new RegExp((wildcard + "").replace(new RegExp("[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]", "g"), "\\$&").replace(/\\\*/g, "(.*)").replace(/\\\?/g, "."), "i");
         },
         getTarget: function(redirectUrl, callback) {
@@ -406,14 +435,10 @@
         QueryInterface: XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsISupports])
     };
     
-    window.Redirector = null;
-    if(location == 'chrome://browser/content/browser.xul') {
-        if (!window.Redirector) window.Redirector = new Redirector();
-        window.Redirector.init();
+    if (!Services.redirector) {
+        XPCOMUtils.defineLazyGetter(Services, "redirector", function() {
+            return new Redirector();
+        });
     }
-    window.addEventListener('unload', function() {
-        if(location == 'chrome://browser/content/browser.xul') {
-            if (window.Redirector) window.Redirector.destroy();
-        }
-    });
+    Services.redirector.init(window);
 })();
