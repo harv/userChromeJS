@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy(true);
-// @version         1.5.1
+// @version         1.5.2
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -22,14 +22,14 @@
         this.disableIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwQAADsEBuJFr7QAAABZ0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMDvo9WkAAAHuSURBVDhPfVM7S4JRGP6832kKFVOLnIwckuZWaWrwfkG0hn5CY9HWEDgE4qBD0BSFuLRESdjWWIRTQ0u1BVEYZc9zPJ/5KfXAy3nPezvv7Sjj8Hq9UavVWjUajV1QD/RhMpnuIKt4PJ6wNJtEOBx22my2Q51O1zcYDJ9ms7mNswqqgb/W6/Vf0H05HI6DUChkkW4DSOcbOsOgGggEvFI1RDAYnIXNEdi+0+m8iEajpoEGgFODzlCsx+PxuWQyuaxSNptdLJfLLmmq2O32LRy03RMCvLYkU6vznk6nG6D+GL1nMpkN4QCgH02U1GNWfL2KyyfqmqESxmqAIjPI5/Nr4F9Ab8Vi0Uobn88XYcYul2tXQYe7aNIVFYQagM5SRNklZaVSaVqKFEznHn4dBuix21I+mkFL8me8o4SmNBFA1icI8igCgKlJ+TBAKpW6xfkqnfdjsZhmdPA5VQN0kUFbyjUlFAqFAPhn0FMul9OM1mKxsPSOaCIaMtFEtQfgN3lHFtwBATYRRx97scPVFWPERTNGNUAikTDj/gD6RpAVyvB6azhGYmSR+FoEhqtwnBJKALIFyqiD7TZEv4tEuN1uyB3qKtfVckbh9/vnsUDHYDn/c80qEwyCMkQmf30mEla5MuE8iv++M9Z+7Dsryg+nccGV4H85ngAAAABJRU5ErkJggg==";
     }
     RedirectorUI.prototype = {
-    	get redirector() {
-			if (!Services.redirector) {
-		        XPCOMUtils.defineLazyGetter(Services, "redirector", function() {
-		            return new Redirector();
-		        });
-		    }
-		    return Services.redirector;
-    	},
+        get redirector() {
+            if (!Services.redirector) {
+                XPCOMUtils.defineLazyGetter(Services, "redirector", function() {
+                    return new Redirector();
+                });
+            }
+            return Services.redirector;
+        },
         init: function() {
             this.redirector.init(window);
             this.drawUI();
@@ -41,8 +41,7 @@
             }
         },
         edit: function() {
-            let aFile = Cc["@mozilla.org/file/directory_service;1"].getService(Ci.nsIDirectoryService).QueryInterface(Ci.nsIProperties).get('UChrm', Ci.nsILocalFile);
-            aFile.appendRelativePath(this.redirector.rulesFile);
+            let aFile = FileUtils.getFile("UChrm", this.redirector.rulesFile, false);
             if (!aFile || !aFile.exists() || !aFile.isFile()) return;
             var editor;
             try {
@@ -182,7 +181,7 @@
     };
 
     function Redirector() {
-        this.rulesFile = "local\\_redirector.js";
+        this.rulesFile = ["local", "_redirector.js"];
         this.rules = [];
     }
     Redirector.prototype = {
@@ -231,8 +230,7 @@
             this.loadRule();
         },
         loadRule: function() {
-            var aFile = Cc["@mozilla.org/file/directory_service;1"].getService(Ci.nsIDirectoryService).QueryInterface(Ci.nsIProperties).get('UChrm', Ci.nsILocalFile);
-            aFile.appendRelativePath(this.rulesFile);
+            var aFile = FileUtils.getFile("UChrm", this.rulesFile, false);
             if (!aFile.exists() || !aFile.isFile()) return null;
             var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
             var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
@@ -343,7 +341,7 @@
             // don't redirect clicking links with "_blank" target attribute
             // cause links will be loaded in current tab/window
             if (this._cache.clickUrl[contentLocation.spec]) {
-                delete this._cache.clickUrl[contentLocation.spec];
+                this._cache.clickUrl[contentLocation.spec] = false;
                 return Ci.nsIContentPolicy.ACCEPT;
             }
             // only redirect documents
