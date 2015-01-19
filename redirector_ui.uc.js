@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy(true);
-// @version         1.5.2
+// @version         1.5.3
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -22,6 +22,21 @@
         this.disableIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwQAADsEBuJFr7QAAABZ0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMDvo9WkAAAHuSURBVDhPfVM7S4JRGP6832kKFVOLnIwckuZWaWrwfkG0hn5CY9HWEDgE4qBD0BSFuLRESdjWWIRTQ0u1BVEYZc9zPJ/5KfXAy3nPezvv7Sjj8Hq9UavVWjUajV1QD/RhMpnuIKt4PJ6wNJtEOBx22my2Q51O1zcYDJ9ms7mNswqqgb/W6/Vf0H05HI6DUChkkW4DSOcbOsOgGggEvFI1RDAYnIXNEdi+0+m8iEajpoEGgFODzlCsx+PxuWQyuaxSNptdLJfLLmmq2O32LRy03RMCvLYkU6vznk6nG6D+GL1nMpkN4QCgH02U1GNWfL2KyyfqmqESxmqAIjPI5/Nr4F9Ab8Vi0Uobn88XYcYul2tXQYe7aNIVFYQagM5SRNklZaVSaVqKFEznHn4dBuix21I+mkFL8me8o4SmNBFA1icI8igCgKlJ+TBAKpW6xfkqnfdjsZhmdPA5VQN0kUFbyjUlFAqFAPhn0FMul9OM1mKxsPSOaCIaMtFEtQfgN3lHFtwBATYRRx97scPVFWPERTNGNUAikTDj/gD6RpAVyvB6azhGYmSR+FoEhqtwnBJKALIFyqiD7TZEv4tEuN1uyB3qKtfVckbh9/vnsUDHYDn/c80qEwyCMkQmf30mEla5MuE8iv++M9Z+7Dsryg+nccGV4H85ngAAAABJRU5ErkJggg==";
     }
     RedirectorUI.prototype = {
+        hash: new Date().getTime(),
+        _mm: null,
+        _ppmm: null,
+        get mm() {
+            if (!this._mm) {
+                this._mm = Cc["@mozilla.org/childprocessmessagemanager;1"].getService(Ci.nsISyncMessageSender);
+            }
+            return this._mm;
+        },
+        get ppmm() {
+            if (!this._ppmm) {
+                this._ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"].getService(Ci.nsIMessageBroadcaster);
+            }
+            return this._ppmm;
+        },
         get redirector() {
             if (!Services.redirector) {
                 XPCOMUtils.defineLazyGetter(Services, "redirector", function() {
@@ -33,12 +48,17 @@
         init: function() {
             this.redirector.init(window);
             this.drawUI();
+            // register self as a messagelistener
+            this.mm.addMessageListener("redirector:toggle", this);
+            this.mm.addMessageListener("redirector:toggle-item", this);
         },
         destroy: function(shouldDestoryUI) {
             this.redirector.destroy(window);
             if (shouldDestoryUI) {
                 this.destoryUI();
             }
+            // this.mm.removeMessageListener("redirector:toggle", this);
+            // this.mm.removeMessageListener("redirector:toggle-item", this);
         },
         edit: function() {
             let aFile = FileUtils.getFile("UChrm", this.redirector.rulesFile, false);
@@ -63,14 +83,18 @@
                 alert("editor error.")
             }
         },
-        toggle: function(i) {
+        toggle: function(i, callfromMessage) {
             if (i) {
-                this.redirector.rules[i].state = !this.redirector.rules[i].state;
                 // update checkbox state
                 let item = document.getElementById("redirector-item-" + i);
                 if (item) item.setAttribute("checked", this.redirector.rules[i].state);
                 // clear cache
                 this.redirector.clearCache();
+                if (!callfromMessage) {
+                    this.redirector.rules[i].state = !this.redirector.rules[i].state;
+                    // notify other windows to update
+                    this.ppmm.broadcastAsyncMessage("redirector:toggle-item", {hash: this.hash, item: i});
+                }
             } else {
                 let menuitems = document.querySelectorAll("menuitem[id^='redirector-item-']");
                 this.state = !this.state;
@@ -90,6 +114,10 @@
                 let icon = document.getElementById("redirector-icon");
                 if (icon) {
                     icon.style.listStyleImage = "url(" + (this.state ? this.enableIcon : this.disableIcon) + ")";
+                }
+                if (!callfromMessage) {
+                    // notify other windows to update
+                    this.ppmm.broadcastAsyncMessage("redirector:toggle", {hash: this.hash});
                 }
             }
         },
@@ -170,13 +198,27 @@
             let menuitems = document.querySelectorAll("menuitem[id^='redirector-item-']");
             if (!menu || !menuitems) return;
             for (let i = 0; i < menuitems.length; i++) {
-            	menu.removeChild(menuitems[i]);
+                menu.removeChild(menuitems[i]);
             }
         },
         reload: function() {
             this.redirector.reload();
             this.clearItems();
             this.buildItems();
+        },
+        // nsIMessageListener interface implementation
+        receiveMessage: function(message) {
+            if (this.hash == message.data.hash) {
+                return;
+            }
+            switch (message.name) {
+                case "redirector:toggle":
+                    this.toggle(null, true);
+                    break;
+                case "redirector:toggle-item":
+                    this.toggle(message.data.item, true);
+                    break;
+            }
         }
     };
 
