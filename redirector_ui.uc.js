@@ -87,11 +87,13 @@
             if (i) {
                 // update checkbox state
                 let item = document.getElementById("redirector-item-" + i);
+                if (!callfromMessage) {
+                    this.redirector.rules[i].state = !this.redirector.rules[i].state;
+                }
                 if (item) item.setAttribute("checked", this.redirector.rules[i].state);
                 // clear cache
                 this.redirector.clearCache();
                 if (!callfromMessage) {
-                    this.redirector.rules[i].state = !this.redirector.rules[i].state;
                     // notify other windows to update
                     this.ppmm.broadcastAsyncMessage("redirector:toggle-item", {hash: this.hash, item: i});
                 }
