@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector.uc.js
 // @startup         Services.redirector.init(window);
 // @shutdown        Services.redirector.destroy(window);
-// @version         1.5
+// @version         1.5.5
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -32,9 +32,10 @@
             regex: true
         },{
             // google搜索结果禁止跳转
-            from: /^https?:\/\/www\.google\.com\/url\?.*url=([^&]*).*/i,
-            to: "$1",
-            regex: true
+            from: /^https?:\/\/(www|news)\.google\.com\/(news\/)?url\?.*url=([^&]*).*/i,
+            to: "$3",
+            regex: true,
+            decode: true
         }];
     }
     Redirector.prototype = {
@@ -71,12 +72,12 @@
             }
         },
         getRedirectUrl: function(originUrl) {
-            let url = originUrl;
-            let redirectUrl = this._cache.redirectUrl[url];
+            let redirectUrl = this._cache.redirectUrl[originUrl];
             if(typeof redirectUrl != "undefined") {
                 return redirectUrl;
             }
             redirectUrl = null;
+            let url, redirect;
             let regex, from, to, exclude, decode;
             for each (let rule in this.rules) {
                 if (rule.computed) {
@@ -89,24 +90,22 @@
                     }
                     rule.computed = {regex: regex, from: from, to: to, exclude: exclude, decode: decode};
                 }
-                if (decode) {
-                    url = this.decodeUrl(originUrl);
-                }
-                let redirect = regex
+                url = decode ? this.decodeUrl(originUrl) : originUrl;
+                redirect = regex
                     ? from.test(url) ? !(exclude && exclude.test(url)) : false
                     : from == url ? !(exclude && exclude == url) : false;
                 if (redirect) {
-                    let reurl = typeof to == "function"
+                    url = typeof to == "function"
                         ? regex ? to(url.match(from)) : to(from)
                         : regex ? url.replace(from, to) : to;
                     redirectUrl = {
-                        url : decode ? reurl : this.decodeUrl(reurl),	// 避免二次解码
+                        url : decode ? url : this.decodeUrl(url),	// 避免二次解码
                         resp: rule.resp
                     };
                     break;
                 }
             }
-            this._cache.redirectUrl[url] = redirectUrl;
+            this._cache.redirectUrl[originUrl] = redirectUrl;
             return redirectUrl;
         },
         decodeUrl: function(encodedUrl) {
