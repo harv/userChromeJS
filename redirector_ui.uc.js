@@ -303,6 +303,8 @@
             let url, redirect;
             let regex, from, to, exclude, decode;
             for each (let rule in this.rules) {
+                if (typeof rule.state == "undefined") rule.state = true;
+                if (!rule.state) continue;
                 if (rule.computed) {
                     regex = rule.computed.regex; from = rule.computed.from; to = rule.computed.to; exclude = rule.computed.exclude; decode = rule.computed.decode;
                 } else {
