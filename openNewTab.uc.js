@@ -5,7 +5,7 @@
 // @include			chrome://browser/content/places/places.xul
 // @description    	Open Bookmarks/History/Search in New Tab
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/openNewTab.uc.js
-// @version			1.0
+// @version			1.1
 // ==/UserScript==
 
 (function() {
@@ -23,7 +23,6 @@
 					case "goPopup": 		   // menubar history
 					case "BMB_bookmarksPopup": // navibar bookmarket
 					case "PanelUI-history":    // navibar history
-					case "bookmarksPanel":     // sidebar bookmarket
 					case "bookmarksPanel":     // sidebar bookmarket
 					case "history-panel":      // sidebar history
 					case "placeContent":       // library bookmarket&history
@@ -46,12 +45,18 @@
 			if (win.location == 'chrome://browser/content/bookmarks/bookmarksPanel.xul'
 				|| win.location == 'chrome://browser/content/history/history-panel.xul') {
 				eval("win.whereToOpenLink=" + win.whereToOpenLink.toString().replace(/return "current";/g, whereToOpenLinkMod.toString().replace(/^.*{|}$/g, "")));
-			}
+			} else if (win.location == "chrome://browser/content/readinglist/sidebar.xhtml") {
+                /* :::: Open Sidebar ReadingList in New Tab :::: */
+                eval("win.RLSidebar.openURL = " + win.RLSidebar.openURL.toString().replace(/log\.debug\(.*\);/, "")
+                    .replace(/mainWindow\.openUILink\(url, event\);/, (function(url, event) {
+                        var where = isTabEmpty(gBrowser.mCurrentTab) ? 'current' : 'tab';
+                    }).toString().replace(/^.*{|}$/g, "") + "\nmainWindow.openUILinkIn(url, where);"));
+            }
 		});
 
 		/* :::: Open Search in New Tab :::: */
 		var searchbar = document.getElementById("searchbar");
-		eval("searchbar.handleSearchCommand=" + searchbar.handleSearchCommand.toString().replace(/this.doSearch\(textValue, where(, aEngine)?\);/,(function() {
+		eval("searchbar.handleSearchCommand=" + searchbar.handleSearchCommand.toString().replace(/this\.doSearch\(textValue, where(, aEngine)?\);/,(function() {
 			{
 				if (isTabEmpty(gBrowser.mCurrentTab)) where = 'current';
 				else where = 'tab';
