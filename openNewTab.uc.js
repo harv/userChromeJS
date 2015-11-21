@@ -59,7 +59,7 @@
 		eval("searchbar.handleSearchCommand=" + searchbar.handleSearchCommand.toString().replace(/this\.doSearch\(textValue, where(, aEngine)?\);/,(function() {
 			{
 				if (isTabEmpty(gBrowser.mCurrentTab)) where = 'current';
-				// else where = 'tab';
+				else where = 'tab';
 
 				try {   // firefox 34+
                     this.doSearch(textValue, where, aEngine);
