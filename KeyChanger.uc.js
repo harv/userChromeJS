@@ -1,8 +1,8 @@
 var KeyChanger = {
 	keys : {
-        // 重启浏览器
-		'p+ctrl' : 'Services.appinfo.invalidateCachesOnRestart() || Application.restart();',
-        // 打开Profile
+		// 重启浏览器
+		'p+ctrl' : 'Services.startup.quit(Services.startup.eAttemptQuit | Services.startup.eRestart) || Services.appinfo.invalidateCachesOnRestart() || Application.restart();',
+		// 打开Profile
 		'[+ctrl' : 'Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties).get("ProfD", Components.interfaces.nsILocalFile).reveal();',
 		// 打开Chrome
 		']+ctrl' : 'Components.classes["@mozilla.org/file/directory_service;1"].getService(Components.interfaces.nsIProperties).get("UChrm", Components.interfaces.nsILocalFile).reveal();',
@@ -18,12 +18,16 @@ var KeyChanger = {
 		'r+ctrl' : 'KeyChanger.reloadFrame();',
 		// 强制刷新标签页/frame
 		'r+ctrl+shift' : 'KeyChanger.reloadFrame(true);',
+		// 停止标签页
+		's+shift' : 'BrowserStop();',
 		// 打开Error Console
 		'j+shift' : 'toJavaScriptConsole();',
 		// 超级上一页
 		'z+alt': 'try{nextPage.next(false);}catch(e){}',
 		// 超级下一页
-		'x+alt': 'try{nextPage.next(true);}catch(e){}'
+		'x+alt': 'try{nextPage.next(true);}catch(e){}',
+		// 超级下一页
+		'p+alt': 'KeyChanger.switchProxy();',
 	},
 	reloadFrame: function(skipCache) {
 		let prevDoc, doc = document;
@@ -32,6 +36,28 @@ var KeyChanger = {
 			doc = doc.activeElement.contentDocument
 		}
 		prevDoc.location.reload(skipCache);
+	},
+	switchProxy: function(){
+		var xpPref = Components.classes["@mozilla.org/preferences-service;1"]
+						.getService(Components.interfaces.nsIPrefBranch);
+		try{
+			if (0 == xpPref.getIntPref("network.proxy.type")) {
+				xpPref.setIntPref("network.proxy.type", 1);
+				if ("Notification" in window && Notification.permission === "granted") {
+					new Notification("", {
+						body: "Proxy is enabled(Manual)."
+					});
+				}
+			} else {
+				xpPref.setIntPref("network.proxy.type", 0);
+				if ("Notification" in window && Notification.permission === "granted") {
+					new Notification("", {
+						body: "Proxy is disabled."
+					});
+				}
+			}
+		}catch(e){
+		}
 	},
 	makeKeyset : function() {
 		var keys = this.makeKeys();
