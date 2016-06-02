@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector.uc.js
 // @startup         Services.redirector.init(window);
 // @shutdown        Services.redirector.destroy(window);
-// @version         1.5.5
+// @version         1.5.5.2
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -20,10 +20,11 @@
             to: "https://haoutil.googlecode.com",   // 目标地址
                                                     // 支持函数(function(matches){}),返回必须是字符串
                                                     // 参数 matches: 正则,匹配结果数组(match函数结果); 通配符,整个网址和(*)符号匹配结果组成的数组; 字符串,整个网址
-            wildcard: false,                        // 可选，true 表示 from 是通配符
-            regex: false,                           // 可选，true 表示 from 是正则表达式
-            resp: false,                            // 可选，true 表示替换 response body
-            decode: false                           // 可选，true 表示尝试对 from 解码
+            wildcard: false,                        // 可选，true 表示 from 是通配符, 默认 false
+            regex: false,                           // 可选，true 表示 from 是正则表达式, 默认 false
+            resp: false,                            // 可选，true 表示替换 response body, 默认 false
+            decode: false,                          // 可选，true 表示尝试对 from 解码, 默认 false
+            state: true                             // 可选，true 表示该条规则生效, 默认 true
         },{
             // google链接加密
             from: /^http:\/\/(([^\.]+\.)?google\..+)/i,
@@ -80,6 +81,8 @@
             let url, redirect;
             let regex, from, to, exclude, decode;
             for each (let rule in this.rules) {
+                if (typeof rule.state == "undefined") rule.state = true;
+                if (!rule.state) continue;
                 if (rule.computed) {
                     regex = rule.computed.regex; from = rule.computed.from; to = rule.computed.to; exclude = rule.computed.exclude; decode = rule.computed.decode;
                 } else {
@@ -99,7 +102,7 @@
                         ? regex ? to(url.match(from)) : to(from)
                         : regex ? url.replace(from, to) : to;
                     redirectUrl = {
-                        url : decode ? url : this.decodeUrl(url),	// 避免二次解码
+                        url : decode ? url : this.decodeUrl(url),    // 避免二次解码
                         resp: rule.resp
                     };
                     break;
