@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy(true);
-// @version         1.5.5.2
+// @version         1.5.5.3
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -40,7 +40,9 @@
         },
         get redirector() {
             if (!Services.redirector) {
+                let state = this.state;
                 XPCOMUtils.defineLazyGetter(Services, "redirector", function() {
+                    Redirector.prototype.state = state;
                     Redirector.prototype.clearCache = function() {
                         // clear cache
                         this._cache = {
@@ -54,7 +56,10 @@
             return Services.redirector;
         },
         init: function() {
-            this.redirector.init(window);
+            this.state = this.redirector.state;
+            if (this.state) {
+                this.redirector.init(window);
+            }
             this.drawUI();
             // register self as a messagelistener
             this.mm.addMessageListener("redirector:toggle", this);
@@ -116,9 +121,16 @@
                 menu.parentNode.removeChild(menu);
                 delete menu;
             }
+            let key = document.getElementById("redirector-toggle-key");
+            if (key) {
+                key.parentNode.removeChild(key);
+                delete key;
+            }
         },
-        buildItems: function() {
-            this.loadRule();
+        buildItems: function(forceLoadRule) {
+            if (forceLoadRule || this.redirector.rules.length == 0) {
+                this.loadRule();
+            }
             let menu = document.getElementById("redirector-menupopup");
             if (!menu) return;
             for(let i = 0; i < this.redirector.rules.length; i++) {
@@ -153,7 +165,8 @@
                 data = decodeURIComponent(escape(data));
             } catch (e) {}
             sstream.close();
-            fstream.close();if (!data) return;
+            fstream.close();
+            if (!data) return;
             var sandbox = new Cu.Sandbox(new XPCNativeWrapper(window));
             try {
                 Cu.evalInSandbox(data, sandbox, "1.8");
@@ -179,6 +192,7 @@
             } else {
                 let menuitems = document.querySelectorAll("menuitem[id^='redirector-item-']");
                 this.state = !this.state;
+                this.redirector.state = this.state;
                 if (this.state) {
                     this.init();
                     Object.keys(menuitems).forEach(function(n) menuitems[n].setAttribute("disabled", false));
@@ -207,7 +221,7 @@
                 this.redirector.clearCache();
             }
             this.clearItems();
-            this.buildItems();
+            this.buildItems(true);
             if (!callfromMessage) {
                 // notify other windows to update
                 this.ppmm.broadcastAsyncMessage("redirector:reload", {hash: this.hash});
