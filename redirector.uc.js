@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector.uc.js
 // @startup         Services.redirector.init(window);
 // @shutdown        Services.redirector.destroy(window);
-// @version         1.5.5.2
+// @version         1.5.5.4
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -54,7 +54,7 @@
             if (!registrar.isCIDRegistered(this.classID)) {
                 registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
                 let catMan = XPCOMUtils.categoryManager;
-                for each (let category in this.xpcom_categories)
+                for (let category of this.xpcom_categories)
                     catMan.addCategoryEntry(category, this.contractID, this.contractID, false, true);
                 Services.obs.addObserver(this, "http-on-modify-request", false);
                 Services.obs.addObserver(this, "http-on-examine-response", false);
@@ -66,7 +66,7 @@
             if (registrar.isCIDRegistered(this.classID)) {
                 registrar.unregisterFactory(this.classID, this);
                 let catMan = XPCOMUtils.categoryManager;
-                for each (let category in this.xpcom_categories)
+                for (let category of this.xpcom_categories)
                     catMan.deleteCategoryEntry(category, this.contractID, false);
                 Services.obs.removeObserver(this, "http-on-modify-request", false);
                 Services.obs.removeObserver(this, "http-on-examine-response", false);
@@ -80,7 +80,7 @@
             redirectUrl = null;
             let url, redirect;
             let regex, from, to, exclude, decode;
-            for each (let rule in this.rules) {
+            for (let rule of this.rules) {
                 if (typeof rule.state == "undefined") rule.state = true;
                 if (!rule.state) continue;
                 if (rule.computed) {
@@ -197,7 +197,7 @@
             if (newChannel.loadGroup && newChannel.loadGroup.notificationCallbacks)
                 callbacks.push(newChannel.loadGroup.notificationCallbacks);
             let win, webNav;
-            for each (let callback in callbacks) {
+            for (let callback of callbacks) {
                 try {
                     win = callback.getInterface(Ci.nsILoadContext).associatedWindow;
                     webNav = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation);
