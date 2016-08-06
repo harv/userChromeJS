@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy(true);
-// @version         1.5.5.5
+// @version         1.5.5.6
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -102,7 +102,7 @@
                     icon.setAttribute("tooltiptext", "Redirector");
                     icon.setAttribute("style", "padding: 0px 2px; list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
                 } else if (this.iconStyle == 1) {
-                    let icon = document.getElementById("menu_preferences").parentNode.appendChild(document.createElement("menu"));
+                    let icon = document.getElementById("devToolsSeparator").parentNode.appendChild(document.createElement("menu"));
                     icon.setAttribute("id", "redirector-icon");
                     icon.setAttribute("class", "menu-iconic");
                     icon.setAttribute("label", "Redirector");
