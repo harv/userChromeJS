@@ -17,9 +17,8 @@
 
     function RedirectorUI() {
         this.rules = "local/_redirector.js".split("/"); // 规则文件路径
-        this.addIcon = true;                            // 是否添加按钮/菜单
-        this.iconStyle = 0;                             // 0 按钮，1 菜单
         this.state = true;                              // 是否启用脚本
+        this.addIcon = 1;                               // 添加到 0 不添加 1 地址栏图标 2 导航栏按钮 3 工具栏菜单
         this.enableIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABZ0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMDvo9WkAAAI2SURBVDhPbVPNahNRGP3uzORvMhNCy7RJmGziICEtZOuiNbjRB5CgD+AyG1e6i4ib0m4KbhRKEemu1oUgbgTzAhXBjd2IUJBuopKCGjJzPSe5GWLpB5f5fs45uffcG7kYzWZzuVAo9DKZzJHjOB+5mBeLxV4YhksGdmlYnuc9tG37HLkG8Qz5wLKsAXP2OCuVSg+IJSGNTqfj+L5/hFTncrlBpVLp9Pv9FMScvWw2O0Cpie12u/ZsikDjCT4aW9/5vrpa1CLl+UrCsICvIo5C+IEdYg1HJIqiK0qpvyC/01qrROQZCHq+YqUSrNPEtm8TT5F8Pv+WHHIF5myjSOr1+hoBCwKPkN8dO859rdTPRKnRWRB4xMDMdXLg2bZA7TPOdswBYy6A76ZpCciv2fvl+1dNS8ghV+Dwb7i7Z/qLAntYfWz/KdY4tqxP6KfGkkOu4I4nKJ6b/qLAEMQJtk8fDs5dt2Ig0yAHAhMKfEXy3vT/O8Ifz2vh+wNHOB2JrBjINHAbH8gVuP8CamM4GnCwKMB6Ylk91rFtv2TNaDQaK3hgY3iwL0EQbMBRDUd3ObwocBJFORzhG+oEjOvsua67Sw65rHkTr9CIsZsuyBsA38M3PTOu8hp7eAs38JTvEEuOGYu0Wq0lkE+wrRgvbAtPu2xGabTb7TLezBYwCXbwhRwzmkWtVluG6huk/CONYNIhvHnMBbOYw0fRxBA7JV0W1Wr1FskQGaLELSoKDtnDmW/OUPMQ+QfYiMmtP0QQSQAAAABJRU5ErkJggg==";
         this.disableIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwQAADsEBuJFr7QAAABZ0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMDvo9WkAAAHuSURBVDhPfVM7S4JRGP6832kKFVOLnIwckuZWaWrwfkG0hn5CY9HWEDgE4qBD0BSFuLRESdjWWIRTQ0u1BVEYZc9zPJ/5KfXAy3nPezvv7Sjj8Hq9UavVWjUajV1QD/RhMpnuIKt4PJ6wNJtEOBx22my2Q51O1zcYDJ9ms7mNswqqgb/W6/Vf0H05HI6DUChkkW4DSOcbOsOgGggEvFI1RDAYnIXNEdi+0+m8iEajpoEGgFODzlCsx+PxuWQyuaxSNptdLJfLLmmq2O32LRy03RMCvLYkU6vznk6nG6D+GL1nMpkN4QCgH02U1GNWfL2KyyfqmqESxmqAIjPI5/Nr4F9Ab8Vi0Uobn88XYcYul2tXQYe7aNIVFYQagM5SRNklZaVSaVqKFEznHn4dBuix21I+mkFL8me8o4SmNBFA1icI8igCgKlJ+TBAKpW6xfkqnfdjsZhmdPA5VQN0kUFbyjUlFAqFAPhn0FMul9OM1mKxsPSOaCIaMtFEtQfgN3lHFtwBATYRRx97scPVFWPERTNGNUAikTDj/gD6RpAVyvB6azhGYmSR+FoEhqtwnBJKALIFyqiD7TZEv4tEuN1uyB3qKtfVckbh9/vnsUDHYDn/c80qEwyCMkQmf30mEla5MuE8iv++M9Z+7Dsryg+nccGV4H85ngAAAABJRU5ErkJggg==";
     }
@@ -78,7 +77,7 @@
             // this.mm.removeMessageListener("redirector:reload", this);
         },
         drawUI: function() {
-            if (this.addIcon && !document.getElementById("redirector-icon")) {
+            if (this.addIcon > 0 && !document.getElementById("redirector-icon")) {
                 // add menu
                 let xml = '\
                     <menupopup id="redirector-menupopup">\
@@ -94,14 +93,23 @@
                 range.insertNode(range.createContextualFragment(xml.replace(/\n|\t/g, "")));
                 range.detach();
                 // add icon
-                if (this.iconStyle == 0) {
+                if (this.addIcon == 1) {
                     let icon = document.getElementById("urlbar-icons").appendChild(document.createElement("image"));
                     icon.setAttribute("id", "redirector-icon");
                     icon.setAttribute("context", "redirector-menupopup");
                     icon.setAttribute("onclick", "Redirector.iconClick(event);");
                     icon.setAttribute("tooltiptext", "Redirector");
                     icon.setAttribute("style", "padding: 0px 2px; list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
-                } else if (this.iconStyle == 1) {
+                } else if (this.addIcon == 2) {
+                    let icon = document.getElementById("nav-bar-customization-target").appendChild(document.createElement("toolbarbutton"));
+                    icon.setAttribute("id", "redirector-icon");
+                    icon.setAttribute("class", "toolbarbutton-1 chromeclass-toolbar-additional");
+                    icon.setAttribute("label", "Redirector");
+                    icon.setAttribute("tooltiptext", "Redirector");
+                    icon.setAttribute("type", "menu");
+                    icon.setAttribute("popup", "redirector-menupopup");
+                    icon.setAttribute("style", "padding: 0px 2px; list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
+                } else if (this.addIcon == 3) {
                     let icon = document.getElementById("devToolsSeparator").parentNode.appendChild(document.createElement("menu"));
                     icon.setAttribute("id", "redirector-icon");
                     icon.setAttribute("class", "menu-iconic");
@@ -289,7 +297,6 @@
             }
         }
     };
-
     function Redirector() {
         this.rules = [];
     }
