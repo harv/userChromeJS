@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy(true);
-// @version         1.5.5.6
+// @version         1.5.5.7
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -61,6 +61,7 @@
             if (this.state) {
                 this.redirector.init(window);
             }
+            this.loadRule();
             this.drawUI();
             // register self as a messagelistener
             this.mm.addMessageListener("redirector:toggle", this);
@@ -146,10 +147,7 @@
                 delete key;
             }
         },
-        buildItems: function(forceLoadRule) {
-            if (forceLoadRule || this.redirector.rules.length == 0) {
-                this.loadRule();
-            }
+        buildItems: function() {
             let menu = document.getElementById("redirector-menupopup");
             if (!menu) return;
             for (let i = 0; i < this.redirector.rules.length; i++) {
@@ -172,7 +170,10 @@
                 menu.removeChild(menuitem);
             }
         },
-        loadRule: function() {
+        loadRule: function(forceLoadRule) {
+            if (!forceLoadRule && this.redirector.rules.length > 0) {
+                return;
+            }
             var aFile = FileUtils.getFile("UChrm", this.rules, false);
             if (!aFile.exists() || !aFile.isFile()) return null;
             var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
@@ -240,7 +241,8 @@
                 this.redirector.clearCache();
             }
             this.clearItems();
-            this.buildItems(true);
+            this.loadRule(true);
+            this.buildItems();
             if (!callfromMessage) {
                 // notify other windows to update
                 this.ppmm.broadcastAsyncMessage("redirector:reload", {hash: this.hash});
