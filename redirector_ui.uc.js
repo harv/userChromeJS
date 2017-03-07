@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy(true);
-// @version         1.5.5.7
+// @version         1.5.5.8
 // ==/UserScript==
 (function() {
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -100,22 +100,22 @@
                     icon.setAttribute("context", "redirector-menupopup");
                     icon.setAttribute("onclick", "Redirector.iconClick(event);");
                     icon.setAttribute("tooltiptext", "Redirector");
-                    icon.setAttribute("style", "padding: 0px 2px; list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
+                    icon.setAttribute("style", "list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
                 } else if (this.addIcon == 2) {
                     let icon = document.getElementById("nav-bar-customization-target").appendChild(document.createElement("toolbarbutton"));
                     icon.setAttribute("id", "redirector-icon");
                     icon.setAttribute("class", "toolbarbutton-1 chromeclass-toolbar-additional");
                     icon.setAttribute("label", "Redirector");
                     icon.setAttribute("tooltiptext", "Redirector");
-                    icon.setAttribute("type", "menu");
+                    icon.setAttribute("removable", true);
                     icon.setAttribute("popup", "redirector-menupopup");
-                    icon.setAttribute("style", "padding: 0px 2px; list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
+                    icon.setAttribute("style", "list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
                 } else if (this.addIcon == 3) {
                     let icon = document.getElementById("devToolsSeparator").parentNode.appendChild(document.createElement("menu"));
                     icon.setAttribute("id", "redirector-icon");
                     icon.setAttribute("class", "menu-iconic");
                     icon.setAttribute("label", "Redirector");
-                    icon.setAttribute("style", "padding: 0px 2px; list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
+                    icon.setAttribute("style", "list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
                     icon.appendChild(document.getElementById("redirector-menupopup"));
                 }
                 // add rule items
