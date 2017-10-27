@@ -8,9 +8,15 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy(true);
-// @version         1.5.5.8
+// @version         1.5.6
 // ==/UserScript==
 (function() {
+    if (location != "chrome://browser/content/browser.xul") return;
+
+    const Cc = Components.classes;
+    const Ci = Components.interfaces;
+    const Cu = Components.utils;
+
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
     Cu.import("resource://gre/modules/Services.jsm");
     Cu.import("resource://gre/modules/NetUtil.jsm");
@@ -18,7 +24,7 @@
     function RedirectorUI() {
         this.rules = "local/_redirector.js".split("/"); // 规则文件路径
         this.state = true;                              // 是否启用脚本
-        this.addIcon = 1;                               // 添加到 0 不添加 1 地址栏图标 2 导航栏按钮 3 工具栏菜单
+        this.addIcon = 2;                               // 添加到 0 不添加 1 地址栏图标 2 导航栏按钮 3 工具栏菜单
         this.enableIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABZ0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMDvo9WkAAAI2SURBVDhPbVPNahNRGP3uzORvMhNCy7RJmGziICEtZOuiNbjRB5CgD+AyG1e6i4ib0m4KbhRKEemu1oUgbgTzAhXBjd2IUJBuopKCGjJzPSe5GWLpB5f5fs45uffcG7kYzWZzuVAo9DKZzJHjOB+5mBeLxV4YhksGdmlYnuc9tG37HLkG8Qz5wLKsAXP2OCuVSg+IJSGNTqfj+L5/hFTncrlBpVLp9Pv9FMScvWw2O0Cpie12u/ZsikDjCT4aW9/5vrpa1CLl+UrCsICvIo5C+IEdYg1HJIqiK0qpvyC/01qrROQZCHq+YqUSrNPEtm8TT5F8Pv+WHHIF5myjSOr1+hoBCwKPkN8dO859rdTPRKnRWRB4xMDMdXLg2bZA7TPOdswBYy6A76ZpCciv2fvl+1dNS8ghV+Dwb7i7Z/qLAntYfWz/KdY4tqxP6KfGkkOu4I4nKJ6b/qLAEMQJtk8fDs5dt2Ig0yAHAhMKfEXy3vT/O8Ifz2vh+wNHOB2JrBjINHAbH8gVuP8CamM4GnCwKMB6Ylk91rFtv2TNaDQaK3hgY3iwL0EQbMBRDUd3ObwocBJFORzhG+oEjOvsua67Sw65rHkTr9CIsZsuyBsA38M3PTOu8hp7eAs38JTvEEuOGYu0Wq0lkE+wrRgvbAtPu2xGabTb7TLezBYwCXbwhRwzmkWtVluG6huk/CONYNIhvHnMBbOYw0fRxBA7JV0W1Wr1FskQGaLELSoKDtnDmW/OUPMQ+QfYiMmtP0QQSQAAAABJRU5ErkJggg==";
         this.disableIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwQAADsEBuJFr7QAAABZ0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMDvo9WkAAAHuSURBVDhPfVM7S4JRGP6832kKFVOLnIwckuZWaWrwfkG0hn5CY9HWEDgE4qBD0BSFuLRESdjWWIRTQ0u1BVEYZc9zPJ/5KfXAy3nPezvv7Sjj8Hq9UavVWjUajV1QD/RhMpnuIKt4PJ6wNJtEOBx22my2Q51O1zcYDJ9ms7mNswqqgb/W6/Vf0H05HI6DUChkkW4DSOcbOsOgGggEvFI1RDAYnIXNEdi+0+m8iEajpoEGgFODzlCsx+PxuWQyuaxSNptdLJfLLmmq2O32LRy03RMCvLYkU6vznk6nG6D+GL1nMpkN4QCgH02U1GNWfL2KyyfqmqESxmqAIjPI5/Nr4F9Ab8Vi0Uobn88XYcYul2tXQYe7aNIVFYQagM5SRNklZaVSaVqKFEznHn4dBuix21I+mkFL8me8o4SmNBFA1icI8igCgKlJ+TBAKpW6xfkqnfdjsZhmdPA5VQN0kUFbyjUlFAqFAPhn0FMul9OM1mKxsPSOaCIaMtFEtQfgN3lHFtwBATYRRx97scPVFWPERTNGNUAikTDj/gD6RpAVyvB6azhGYmSR+FoEhqtwnBJKALIFyqiD7TZEv4tEuN1uyB3qKtfVckbh9/vnsUDHYDn/c80qEwyCMkQmf30mEla5MuE8iv++M9Z+7Dsryg+nccGV4H85ngAAAABJRU5ErkJggg==";
     }
@@ -42,16 +48,18 @@
             if (!Services.redirector) {
                 let state = this.state;
                 XPCOMUtils.defineLazyGetter(Services, "redirector", function() {
-                    Redirector.prototype.rules = [];
-                    Redirector.prototype.state = state;
-                    Redirector.prototype.clearCache = function() {
+                    let redirector = new Redirector();
+                    redirector.clearCache = function() {
                         // clear cache
                         this._cache = {
                             redirectUrl: {},
                             clickUrl: {}
                         };
                     };
-                    return new Redirector();
+                    redirector.rules = [];
+                    redirector.state = state;
+                    redirector.clearCache();
+                    return redirector;
                 });
             }
             return Services.redirector;
@@ -85,7 +93,7 @@
                         <menuitem label="Enable" id="redirector-toggle" type="checkbox" autocheck="false" key="redirector-toggle-key" checked="' + this.state + '" oncommand="Redirector.toggle();" />\
                         <menuitem label="Reload" id="redirector-reload" oncommand="Redirector.reload();"/>\
                         <menuitem label="Edit" id="redirector-edit" oncommand="Redirector.edit();"/>\
-                        <menuseparator id="redirector-sepalator"/>\
+                        <menuseparator id="redirector-separator"/>\
                     </menupopup>\
                 ';
                 let range = document.createRange();
@@ -157,7 +165,7 @@
                 menuitem.setAttribute("class", "redirector-item");
                 menuitem.setAttribute("type", "checkbox");
                 menuitem.setAttribute("autocheck", "false");
-                menuitem.setAttribute("checked", typeof this.redirector.rules[i].state == "undefined" ? true : this.redirector.rules[i].state);
+                menuitem.setAttribute("checked", typeof this.redirector.rules[i].state === "undefined" ? true : this.redirector.rules[i].state);
                 menuitem.setAttribute("oncommand", "Redirector.toggle('"+ i +"');");
                 menuitem.setAttribute("disabled", !this.state);
             }
@@ -253,7 +261,7 @@
             if (!aFile || !aFile.exists() || !aFile.isFile()) return;
             var editor;
             try {
-                editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsILocalFile);
+                editor = Services.prefs.getComplexValue("view_source.editor.path", Ci.nsIFile);
             } catch (e) {
                 alert("Please set editor path.\nview_source.editor.path");
                 toOpenWindowByType('pref:pref', 'about:config?filter=view_source.editor.path');
@@ -301,12 +309,12 @@
     };
     function Redirector() {
         this.rules = [];
-    }
-    Redirector.prototype = {
-        _cache: {
+        this._cache = {
             redirectUrl: {},
             clickUrl: {}
-        },
+        };
+    }
+    Redirector.prototype = {
         classDescription: "Redirector content policy",
         classID: Components.ID("{1d5903f0-6b5b-4229-8673-76b4048c6675}"),
         contractID: "@haoutil.com/redirector/policy;1",
@@ -337,14 +345,14 @@
         },
         getRedirectUrl: function(originUrl) {
             let redirectUrl = this._cache.redirectUrl[originUrl];
-            if(typeof redirectUrl != "undefined") {
+            if(typeof redirectUrl !== "undefined") {
                 return redirectUrl;
             }
             redirectUrl = null;
             let url, redirect;
             let regex, from, to, exclude, decode;
             for (let rule of this.rules) {
-                if (typeof rule.state == "undefined") rule.state = true;
+                if (typeof rule.state === "undefined") rule.state = true;
                 if (!rule.state) continue;
                 if (rule.computed) {
                     regex = rule.computed.regex; from = rule.computed.from; to = rule.computed.to; exclude = rule.computed.exclude; decode = rule.computed.decode;
@@ -361,7 +369,7 @@
                     ? from.test(url) ? !(exclude && exclude.test(url)) : false
                     : from == url ? !(exclude && exclude == url) : false;
                 if (redirect) {
-                    url = typeof to == "function"
+                    url = typeof to === "function"
                         ? regex ? to(url.match(from)) : to(from)
                         : regex ? url.replace(from, to) : to;
                     redirectUrl = {
@@ -407,6 +415,8 @@
         handleEvent: function(event) {
             if (!event.ctrlKey && "click" === event.type && 1 === event.which) {
                 let target = event.target;
+                if (!target.href || typeof this._cache.clickUrl[target.href] !== "undefined") return;
+                this._cache.clickUrl[target.href] = false;
                 while(target) {
                     if (target.tagName && "BODY" === target.tagName.toUpperCase()) break;
                     if (target.tagName && "A" === target.tagName.toUpperCase()
@@ -424,7 +434,6 @@
             // don't redirect clicking links with "_blank" target attribute
             // cause links will be loaded in current tab/window
             if (this._cache.clickUrl[contentLocation.spec]) {
-                this._cache.clickUrl[contentLocation.spec] = false;
                 return Ci.nsIContentPolicy.ACCEPT;
             }
             // only redirect documents
@@ -493,8 +502,6 @@
                     let http = subject.QueryInterface(Ci.nsIHttpChannel);
                     let redirectUrl = this.getRedirectUrl(http.URI.spec);
                     if (redirectUrl && redirectUrl.resp) {
-                        if(!http.redirectTo)
-                            redirectUrl.resp = false;
                         if (!redirectUrl.storageStream || !redirectUrl.count) {
                             http.suspend();
                             this.getTarget(redirectUrl, function() {

@@ -8,12 +8,19 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector.uc.js
 // @startup         Services.redirector.init(window);
 // @shutdown        Services.redirector.destroy(window);
-// @version         1.5.5.4
+// @version         1.5.6
 // ==/UserScript==
 (function() {
+    if (location != "chrome://browser/content/browser.xul") return;
+
+    const Cc = Components.classes;
+    const Ci = Components.interfaces;
+    const Cu = Components.utils;
+
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
     Cu.import("resource://gre/modules/Services.jsm");
     Cu.import("resource://gre/modules/NetUtil.jsm");
+
     function Redirector() {
         this.rules = [{
             from: "about:haoutil",                  // 需要重定向的地址
@@ -38,12 +45,12 @@
             regex: true,
             decode: true
         }];
-    }
-    Redirector.prototype = {
-        _cache: {
+        this._cache = {
             redirectUrl: {},
             clickUrl: {}
-        },
+        };
+    }
+    Redirector.prototype = {
         classDescription: "Redirector content policy",
         classID: Components.ID("{1d5903f0-6b5b-4229-8673-76b4048c6675}"),
         contractID: "@haoutil.com/redirector/policy;1",
@@ -74,14 +81,14 @@
         },
         getRedirectUrl: function(originUrl) {
             let redirectUrl = this._cache.redirectUrl[originUrl];
-            if(typeof redirectUrl != "undefined") {
+            if(typeof redirectUrl !== "undefined") {
                 return redirectUrl;
             }
             redirectUrl = null;
             let url, redirect;
             let regex, from, to, exclude, decode;
             for (let rule of this.rules) {
-                if (typeof rule.state == "undefined") rule.state = true;
+                if (typeof rule.state === "undefined") rule.state = true;
                 if (!rule.state) continue;
                 if (rule.computed) {
                     regex = rule.computed.regex; from = rule.computed.from; to = rule.computed.to; exclude = rule.computed.exclude; decode = rule.computed.decode;
@@ -98,7 +105,7 @@
                     ? from.test(url) ? !(exclude && exclude.test(url)) : false
                     : from == url ? !(exclude && exclude == url) : false;
                 if (redirect) {
-                    url = typeof to == "function"
+                    url = typeof to === "function"
                         ? regex ? to(url.match(from)) : to(from)
                         : regex ? url.replace(from, to) : to;
                     redirectUrl = {
@@ -144,6 +151,8 @@
         handleEvent: function(event) {
             if (!event.ctrlKey && "click" === event.type && 1 === event.which) {
                 let target = event.target;
+                if (!target.href || typeof this._cache.clickUrl[target.href] !== "undefined") return;
+                this._cache.clickUrl[target.href] = false;
                 while(target) {
                     if (target.tagName && "BODY" === target.tagName.toUpperCase()) break;
                     if (target.tagName && "A" === target.tagName.toUpperCase()
@@ -161,7 +170,6 @@
             // don't redirect clicking links with "_blank" target attribute
             // cause links will be loaded in current tab/window
             if (this._cache.clickUrl[contentLocation.spec]) {
-                this._cache.clickUrl[contentLocation.spec] = false;
                 return Ci.nsIContentPolicy.ACCEPT;
             }
             // only redirect documents
@@ -230,8 +238,6 @@
                     let http = subject.QueryInterface(Ci.nsIHttpChannel);
                     let redirectUrl = this.getRedirectUrl(http.URI.spec);
                     if (redirectUrl && redirectUrl.resp) {
-                        if(!http.redirectTo)
-                            redirectUrl.resp = false;
                         if (!redirectUrl.storageStream || !redirectUrl.count) {
                             http.suspend();
                             this.getTarget(redirectUrl, function() {

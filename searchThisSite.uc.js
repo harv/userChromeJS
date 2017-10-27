@@ -1,5 +1,8 @@
 //站内搜索
 (function () {
+    const Cc = Components.classes;
+    const Ci = Components.interfaces;
+
 	var ss = Cc["@mozilla.org/browser/search-service;1"].getService(Ci.nsIBrowserSearchService);
 	if (ss.isInitialized) {
 		addSiteSearchEngine();
@@ -29,8 +32,9 @@
 			engine.getSubmission = function (aData, aResponseType) {
 				function getHostname() {
 					var focusedWindow = document.commandDispatcher.focusedWindow;
-					if (!focusedWindow || focusedWindow == window)
+					if (!focusedWindow || focusedWindow == window) {
 						focusedWindow = window.content;
+					}
 
 					var hostname = ("hostname" in focusedWindow.location) ? focusedWindow.location.hostname : "";
 					hostname = hostname.match(/[^.]+\.(com|net|org)(\.[^.]+)?$/g) || hostname.match(/[^.]+(\.[^.]+)+/g) || "";

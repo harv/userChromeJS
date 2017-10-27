@@ -65,15 +65,15 @@
         /* :::: Open Search in New Tab :::: */
         if (b_searchbar) {
             var searchbar = document.getElementById('searchbar');
-            eval('searchbar.handleSearchCommand=' + searchbar.handleSearchCommand.toString().replace(/this\.doSearch\(textValue, where(, aEngine)?\);|this\.handleSearchCommandWhere\(aEvent, aEngine, where, params\);/, (function() {
+            searchbar && eval('searchbar.handleSearchCommand=' + searchbar.handleSearchCommand.toString().replace(/this\.doSearch\(textValue, where(, aEngine)?\);|this\.handleSearchCommandWhere\(aEvent, aEngine, where, params\);/, (function() {
                 where = isTabEmpty(gBrowser.mCurrentTab) ? 'current' : 'tab';
             }).toString().replace(/^.*{|}$/g, '') + '$&'));
             var oneOffButtons = document.getElementById('PopupSearchAutoComplete').oneOffButtons;
-            oneOffButtons && eval('oneOffButtons.handleSearchCommand=' + oneOffButtons.handleSearchCommand.toString().replace(/this\.popup\.handleOneOffSearch\(aEvent, aEngine, where, params\);/, (function() {
+            oneOffButtons && oneOffButtons && eval('oneOffButtons.handleSearchCommand=' + oneOffButtons.handleSearchCommand.toString().replace(/this\.popup\.handleOneOffSearch\(aEvent, aEngine, where, params\);/, (function() {
                 where = isTabEmpty(gBrowser.mCurrentTab) ? 'current' : 'tab';
             }).toString().replace(/^.*{|}$/g, '') + '$&'));
             var oneOffSearchButtons = document.getElementById('PopupAutoCompleteRichResult').input.popup.oneOffSearchButtons;
-            oneOffSearchButtons && eval('oneOffSearchButtons.handleSearchCommand=' + oneOffSearchButtons.handleSearchCommand.toString().replace(/this\.popup\.handleOneOffSearch\(aEvent, aEngine, where, params\);/, (function() {
+            oneOffSearchButtons && oneOffSearchButtons && eval('oneOffSearchButtons.handleSearchCommand=' + oneOffSearchButtons.handleSearchCommand.toString().replace(/this\.popup\.handleOneOffSearch\(aEvent, aEngine, where, params\);/, (function() {
                 where = isTabEmpty(gBrowser.mCurrentTab) ? 'current' : 'tab';
             }).toString().replace(/^.*{|}$/g, '') + '$&'));
         }
