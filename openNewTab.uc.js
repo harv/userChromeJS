@@ -69,11 +69,11 @@
                 where = isTabEmpty(gBrowser.mCurrentTab) ? 'current' : 'tab';
             }).toString().replace(/^.*{|}$/g, '') + '$&'));
             var oneOffButtons = document.getElementById('PopupSearchAutoComplete').oneOffButtons;
-            oneOffButtons && oneOffButtons && eval('oneOffButtons.handleSearchCommand=' + oneOffButtons.handleSearchCommand.toString().replace(/this\.popup\.handleOneOffSearch\(aEvent, aEngine, where, params\);/, (function() {
+            oneOffButtons && eval('oneOffButtons.handleSearchCommand=' + oneOffButtons.handleSearchCommand.toString().replace(/this\.popup\.handleOneOffSearch\(aEvent, aEngine, where, params\);/, (function() {
                 where = isTabEmpty(gBrowser.mCurrentTab) ? 'current' : 'tab';
             }).toString().replace(/^.*{|}$/g, '') + '$&'));
             var oneOffSearchButtons = document.getElementById('PopupAutoCompleteRichResult').input.popup.oneOffSearchButtons;
-            oneOffSearchButtons && oneOffSearchButtons && eval('oneOffSearchButtons.handleSearchCommand=' + oneOffSearchButtons.handleSearchCommand.toString().replace(/this\.popup\.handleOneOffSearch\(aEvent, aEngine, where, params\);/, (function() {
+            oneOffSearchButtons && eval('oneOffSearchButtons.handleSearchCommand=' + oneOffSearchButtons.handleSearchCommand.toString().replace(/this\.popup\.handleOneOffSearch\(aEvent, aEngine, where, params\);/, (function() {
                 where = isTabEmpty(gBrowser.mCurrentTab) ? 'current' : 'tab';
             }).toString().replace(/^.*{|}$/g, '') + '$&'));
         }

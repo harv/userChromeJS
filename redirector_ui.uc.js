@@ -16,6 +16,7 @@
     const Cc = Components.classes;
     const Ci = Components.interfaces;
     const Cu = Components.utils;
+    const Cr = Components.results;
 
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
     Cu.import("resource://gre/modules/Services.jsm");
@@ -30,13 +31,11 @@
     }
     RedirectorUI.prototype = {
         hash: new Date().getTime(),
-        _mm: null,
-        _ppmm: null,
-        get mm() {
-            if (!this._mm) {
-                this._mm = Cc["@mozilla.org/childprocessmessagemanager;1"].getService(Ci.nsISyncMessageSender);
+        get cpmm() {
+            if (!this._cpmm) {
+                this._cpmm = Cc["@mozilla.org/childprocessmessagemanager;1"].getService(Ci.nsISyncMessageSender);
             }
-            return this._mm;
+            return this._cpmm;
         },
         get ppmm() {
             if (!this._ppmm) {
@@ -72,18 +71,18 @@
             this.loadRule();
             this.drawUI();
             // register self as a messagelistener
-            this.mm.addMessageListener("redirector:toggle", this);
-            this.mm.addMessageListener("redirector:toggle-item", this);
-            this.mm.addMessageListener("redirector:reload", this);
+            this.cpmm.addMessageListener("redirector:toggle", this);
+            this.cpmm.addMessageListener("redirector:toggle-item", this);
+            this.cpmm.addMessageListener("redirector:reload", this);
         },
         destroy: function(shouldDestoryUI) {
             this.redirector.destroy(window);
             if (shouldDestoryUI) {
                 this.destoryUI();
             }
-            // this.mm.removeMessageListener("redirector:toggle", this);
-            // this.mm.removeMessageListener("redirector:toggle-item", this);
-            // this.mm.removeMessageListener("redirector:reload", this);
+            // this.cpmm.removeMessageListener("redirector:toggle", this);
+            // this.cpmm.removeMessageListener("redirector:toggle-item", this);
+            // this.cpmm.removeMessageListener("redirector:reload", this);
         },
         drawUI: function() {
             if (this.addIcon > 0 && !document.getElementById("redirector-icon")) {
