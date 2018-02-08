@@ -8,11 +8,9 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy(true);
-// @version         1.5.6
+// @version         1.5.7
 // ==/UserScript==
-(function() {
-    if (location != "chrome://browser/content/browser.xul") return;
-
+location == "chrome://browser/content/browser.xul" && (function() {
     const Cc = Components.classes;
     const Ci = Components.interfaces;
     const Cu = Components.utils;
@@ -87,19 +85,26 @@
         drawUI: function() {
             if (this.addIcon > 0 && !document.getElementById("redirector-icon")) {
                 // add menu
-                let xml = '\
-                    <menupopup id="redirector-menupopup">\
-                        <menuitem label="Enable" id="redirector-toggle" type="checkbox" autocheck="false" key="redirector-toggle-key" checked="' + this.state + '" oncommand="Redirector.toggle();" />\
-                        <menuitem label="Reload" id="redirector-reload" oncommand="Redirector.reload();"/>\
-                        <menuitem label="Edit" id="redirector-edit" oncommand="Redirector.edit();"/>\
-                        <menuseparator id="redirector-separator"/>\
-                    </menupopup>\
-                ';
-                let range = document.createRange();
-                range.selectNodeContents(document.getElementById("mainPopupSet"));
-                range.collapse(false);
-                range.insertNode(range.createContextualFragment(xml.replace(/\n|\t/g, "")));
-                range.detach();
+                let menu = document.getElementById("mainPopupSet").appendChild(document.createElement("menupopup"));
+                menu.setAttribute("id", "redirector-menupopup");
+                let menuitem = menu.appendChild(document.createElement("menuitem"));
+                menuitem.setAttribute("label", "Enable");
+                menuitem.setAttribute("id", "redirector-toggle");
+                menuitem.setAttribute("type", "checkbox");
+                menuitem.setAttribute("autocheck", "false");
+                menuitem.setAttribute("key", "redirector-toggle-key");
+                menuitem.setAttribute("checked", this.state);
+                menuitem.setAttribute("oncommand", "Redirector.toggle();");
+                menuitem = menu.appendChild(document.createElement("menuitem"));
+                menuitem.setAttribute("label", "Reload");
+                menuitem.setAttribute("id", "redirector-reload");
+                menuitem.setAttribute("oncommand", "Redirector.reload();");
+                menuitem = menu.appendChild(document.createElement("menuitem"));
+                menuitem.setAttribute("label", "Edit");
+                menuitem.setAttribute("id", "redirector-edit");
+                menuitem.setAttribute("oncommand", "Redirector.edit();");
+                let menuseparator = menu.appendChild(document.createElement("menuseparator"));
+                menuseparator.setAttribute("id", "redirector-separator");
                 // add icon
                 if (this.addIcon == 1) {
                     let icon = document.getElementById("urlbar-icons").appendChild(document.createElement("image"));
