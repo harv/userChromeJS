@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy(true);
-// @version         1.5.7
+// @version         1.5.8
 // ==/UserScript==
 location == "chrome://browser/content/browser.xul" && (function() {
     const Cc = Components.classes;
@@ -29,18 +29,6 @@ location == "chrome://browser/content/browser.xul" && (function() {
     }
     RedirectorUI.prototype = {
         hash: new Date().getTime(),
-        get cpmm() {
-            if (!this._cpmm) {
-                this._cpmm = Cc["@mozilla.org/childprocessmessagemanager;1"].getService(Ci.nsISyncMessageSender);
-            }
-            return this._cpmm;
-        },
-        get ppmm() {
-            if (!this._ppmm) {
-                this._ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"].getService(Ci.nsIMessageBroadcaster);
-            }
-            return this._ppmm;
-        },
         get redirector() {
             if (!Services.redirector) {
                 let state = this.state;
@@ -69,18 +57,18 @@ location == "chrome://browser/content/browser.xul" && (function() {
             this.loadRule();
             this.drawUI();
             // register self as a messagelistener
-            this.cpmm.addMessageListener("redirector:toggle", this);
-            this.cpmm.addMessageListener("redirector:toggle-item", this);
-            this.cpmm.addMessageListener("redirector:reload", this);
+            Services.cpmm.addMessageListener("redirector:toggle", this);
+            Services.cpmm.addMessageListener("redirector:toggle-item", this);
+            Services.cpmm.addMessageListener("redirector:reload", this);
         },
         destroy: function(shouldDestoryUI) {
             this.redirector.destroy(window);
             if (shouldDestoryUI) {
                 this.destoryUI();
             }
-            // this.cpmm.removeMessageListener("redirector:toggle", this);
-            // this.cpmm.removeMessageListener("redirector:toggle-item", this);
-            // this.cpmm.removeMessageListener("redirector:reload", this);
+            // Services.cpmm.removeMessageListener("redirector:toggle", this);
+            // Services.cpmm.removeMessageListener("redirector:toggle-item", this);
+            // Services.cpmm.removeMessageListener("redirector:reload", this);
         },
         drawUI: function() {
             if (this.addIcon > 0 && !document.getElementById("redirector-icon")) {
@@ -219,7 +207,7 @@ location == "chrome://browser/content/browser.xul" && (function() {
                 this.redirector.clearCache();
                 if (!callfromMessage) {
                     // notify other windows to update
-                    this.ppmm.broadcastAsyncMessage("redirector:toggle-item", {hash: this.hash, item: i});
+                    Services.ppmm.broadcastAsyncMessage("redirector:toggle-item", {hash: this.hash, item: i});
                 }
             } else {
                 let menuitems = document.querySelectorAll("menuitem[id^='redirector-item-']");
@@ -227,10 +215,10 @@ location == "chrome://browser/content/browser.xul" && (function() {
                 this.redirector.state = this.state;
                 if (this.state) {
                     this.init();
-                    Object.keys(menuitems).forEach(function(n) menuitems[n].setAttribute("disabled", false));
+                    Object.keys(menuitems).forEach(function(n) {menuitems[n].setAttribute("disabled", false)});
                 } else {
                     this.destroy();
-                    Object.keys(menuitems).forEach(function(n) menuitems[n].setAttribute("disabled", true));
+                    Object.keys(menuitems).forEach(function(n) {menuitems[n].setAttribute("disabled", true)});
                 }
                 // update checkbox state
                 let toggle = document.getElementById("redirector-toggle");
@@ -244,7 +232,7 @@ location == "chrome://browser/content/browser.xul" && (function() {
                 }
                 if (!callfromMessage) {
                     // notify other windows to update
-                    this.ppmm.broadcastAsyncMessage("redirector:toggle", {hash: this.hash});
+                    Services.ppmm.broadcastAsyncMessage("redirector:toggle", {hash: this.hash});
                 }
             }
         },
@@ -257,7 +245,7 @@ location == "chrome://browser/content/browser.xul" && (function() {
             this.buildItems();
             if (!callfromMessage) {
                 // notify other windows to update
-                this.ppmm.broadcastAsyncMessage("redirector:reload", {hash: this.hash});
+                Services.ppmm.broadcastAsyncMessage("redirector:reload", {hash: this.hash});
             }
         },
         edit: function() {
