@@ -25,7 +25,11 @@ location == "chrome://browser/content/browser.xul" && (function undoCloseTabCont
     		return popup._ss.getClosedTabCount(window);
     	}
     }
-    popup.populateUndoSubmenu = eval("(" + HistoryMenu.prototype.populateUndoSubmenu.toString().replace(/\._rootElt.*/,";").replace(/undoMenu\.firstChild/, "this") + ")");
+    if (HistoryMenu.prototype._elements) {  // ff 62+
+        popup.populateUndoSubmenu = eval("(" + HistoryMenu.prototype.populateUndoSubmenu.toString().replace(/\.undoTabMenu\.firstChild/, "").replace(/\.undoTabMenu/g, "") + ")");
+    } else {
+        popup.populateUndoSubmenu = eval("(" + HistoryMenu.prototype.populateUndoSubmenu.toString().replace(/\._rootElt.*/, ";").replace(/undoMenu\.firstChild/, "this") + ")");
+    }
 
     // replace right click context menu when has recently closed tabs
     var UpdateUndoCloseTabCommand = function() {
@@ -35,14 +39,14 @@ location == "chrome://browser/content/browser.xul" && (function undoCloseTabCont
     if(popup._getClosedTabCount() > 0) {
         UpdateUndoCloseTabCommand();
     } else {
-        gBrowser.mTabContainer.addEventListener("TabClose", function() {
+        (gBrowser.mTabContainer || gBrowser.tabContainer).addEventListener("TabClose", function() {
             UpdateUndoCloseTabCommand();
-            gBrowser.mTabContainer.removeEventListener("TabClose", this, false);
+            (gBrowser.mTabContainer || gBrowser.tabContainer).removeEventListener("TabClose", this, false);
         }, false);
     }
 
     // undoclose tab by middle click on tabbar
-    gBrowser.mTabContainer.addEventListener('click', function(e) {
+    (gBrowser.mTabContainer || gBrowser.tabContainer).addEventListener('click', function(e) {
         if (e.button != 1 || e.target.localName != 'tabs') return;
         undoCloseTab(0);
         e.preventDefault();
