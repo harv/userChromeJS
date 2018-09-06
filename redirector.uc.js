@@ -8,15 +8,15 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector.uc.js
 // @startup         Services.redirector.init(window);
 // @shutdown        Services.redirector.destroy(window);
-// @version         1.5.6
+// @version         1.5.9
 // ==/UserScript==
-(function() {
-    if (location != "chrome://browser/content/browser.xul") return;
-
-    const Cc = Components.classes;
-    const Ci = Components.interfaces;
-    const Cu = Components.utils;
-    const Cr = Components.results;
+location == "chrome://browser/content/browser.xul" && (function() {
+    const {
+        Cc: classes,
+        Ci: interfaces,
+        Cu: utils,
+        Cr: results,
+    } = Components;
 
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
     Cu.import("resource://gre/modules/Services.jsm");
@@ -61,7 +61,7 @@
             let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
             if (!registrar.isCIDRegistered(this.classID)) {
                 registrar.registerFactory(this.classID, this.classDescription, this.contractID, this);
-                let catMan = XPCOMUtils.categoryManager;
+                let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
                 for (let category of this.xpcom_categories)
                     catMan.addCategoryEntry(category, this.contractID, this.contractID, false, true);
                 Services.obs.addObserver(this, "http-on-modify-request", false);
@@ -73,7 +73,7 @@
             let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
             if (registrar.isCIDRegistered(this.classID)) {
                 registrar.unregisterFactory(this.classID, this);
-                let catMan = XPCOMUtils.categoryManager;
+                let catMan = Cc["@mozilla.org/categorymanager;1"].getService(Ci.nsICategoryManager);
                 for (let category of this.xpcom_categories)
                     catMan.deleteCategoryEntry(category, this.contractID, false);
                 Services.obs.removeObserver(this, "http-on-modify-request", false);
@@ -261,7 +261,7 @@
             return this.QueryInterface(iid);
         },
         // nsISupports interface implementation
-        QueryInterface: XPCOMUtils.generateQI([Ci.nsIContentPolicy, Ci.nsIChannelEventSink, Ci.nsIObserver, Ci.nsIFactory, Ci.nsISupports])
+        QueryInterface: ChromeUtils.generateQI([Ci.nsIContentPolicy, Ci.nsIChannelEventSink, Ci.nsIObserver, Ci.nsIFactory, Ci.nsISupports])
     };
     function TrackingListener() {
         this.originalListener = null;
@@ -279,7 +279,7 @@
             this.originalListener.onDataAvailable(request, context, this.redirectUrl.storageStream.newInputStream(0), 0, this.redirectUrl.count);
         },
         // nsISupports interface implementation
-        QueryInterface: XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsISupports])
+        QueryInterface: ChromeUtils.generateQI([Ci.nsIStreamListener, Ci.nsISupports])
     };
 
     if (!Services.redirector) {
