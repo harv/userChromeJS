@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy(true);
-// @version         1.5.9
+// @version         1.5.10
 // ==/UserScript==
 location == "chrome://browser/content/browser.xul" && (function() {
     const {
@@ -518,7 +518,7 @@ location == "chrome://browser/content/browser.xul" && (function() {
             return this.QueryInterface(iid);
         },
         // nsISupports interface implementation
-        QueryInterface: ChromeUtils.generateQI([Ci.nsIContentPolicy, Ci.nsIChannelEventSink, Ci.nsIObserver, Ci.nsIFactory, Ci.nsISupports])
+        QueryInterface: (ChromeUtils.generateQI || XPCOMUtils.generateQI)([Ci.nsIContentPolicy, Ci.nsIChannelEventSink, Ci.nsIObserver, Ci.nsIFactory, Ci.nsISupports])
     };
     function TrackingListener() {
         this.originalListener = null;
@@ -536,7 +536,7 @@ location == "chrome://browser/content/browser.xul" && (function() {
             this.originalListener.onDataAvailable(request, context, this.redirectUrl.storageStream.newInputStream(0), 0, this.redirectUrl.count);
         },
         // nsISupports interface implementation
-        QueryInterface: ChromeUtils.generateQI([Ci.nsIStreamListener, Ci.nsISupports])
+        QueryInterface: (ChromeUtils.generateQI || XPCOMUtils.generateQI)([Ci.nsIStreamListener, Ci.nsISupports])
     };
 
     if (window.Redirector) {
