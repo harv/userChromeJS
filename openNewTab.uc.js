@@ -5,7 +5,7 @@
 // @include         chrome://browser/content/places/places.xul
 // @description     Open Bookmarks/History/Search in New Tab
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/openNewTab.uc.js
-// @version         1.3.4
+// @version         1.3.5
 // ==/UserScript==
 (function() {
     var b_urlbar = false;
@@ -18,7 +18,9 @@
 
             if (!e) return 'current';
             var win = window.opener || window;
-            if (win.isTabEmpty(win.gBrowser.mCurrentTab || win.gBrowser.selectedTab)) return 'current';
+            var isTabEmpty = win.isTabEmpty;
+            var gBrowser = win.gBrowser;
+            if (typeof isTabEmpty === "function" && isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) || gBrowser.selectedTab.isEmpty) return 'current';
             var node = e.originalTarget;
             while (node) {
                 if(node.className && node.className.indexOf('bookmark-item') != -1
@@ -35,7 +37,7 @@
                     case 'history-panel':       // sidebar history
                         return b_history ? 'tab' : 'current';
                     case 'placeContent':        // library bookmarks&history
-                        var collection = window.document.getElementById('searchFilter').getAttribute('collection');
+                        var collection = document.getElementById('searchFilter').getAttribute('collection');
                         var tab = collection === "bookmarks" && b_bookmarks || collection === "history" && b_history;
                         return tab ? 'tab' : 'current';
                 }
@@ -56,15 +58,15 @@
             } else if (win.location == 'chrome://browser/content/readinglist/sidebar.xhtml') {
                 /* :::: Open Sidebar ReadingList in New Tab :::: */
                 eval('win.RLSidebar.openURL = ' + win.RLSidebar.openURL.toString().replace(/log\.debug\(.*\);/, '').replace(/mainWindow\.openUILink\(url, event\);/, (function() {
-                    var where = isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) ? 'current' : 'tab';
+                    var where = typeof isTabEmpty === "function" && isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) || gBrowser.selectedTab.isEmpty ? 'current' : 'tab';
                 }).toString().replace(/^.*{|}$/g, '') + '$&'));
             }
         });
         /* :::: Open Url in New Tab :::: */
         if (b_urlbar) {
             var urlbar = document.getElementById('urlbar');
-            urlbar && eval('urlbar.handleCommand=' + urlbar.handleCommand.toString().replace(/let where = openUILinkWhere;/, (function() {
-                let  where = isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) ? 'current' : 'tab';
+            urlbar && eval('urlbar.handleCommand=' + urlbar.handleCommand.toString().replace(/let where = openUILinkWhere( \|\| this\._whereToOpen\(event\))?;/, (function() {
+                let  where = typeof isTabEmpty === "function" && isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) || gBrowser.selectedTab.isEmpty ? 'current' : 'tab';
             }).toString().replace(/^.*{|}$/g, '')));
         }
         /* :::: Open Search in New Tab :::: */
@@ -72,18 +74,18 @@
             var searchbar = document.getElementById('searchbar');
             searchbar && /*{true: function() {*/
                 eval('searchbar.handleSearchCommand=' + searchbar.handleSearchCommand.toString().replace(/this\.doSearch\(textValue, where(, aEngine)?\);|this\.handleSearchCommandWhere\(aEvent, aEngine, where, params\);/, (function() {
-                    where = isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) ? 'current' : 'tab';
+                    where = typeof isTabEmpty === "function" && isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) || gBrowser.selectedTab.isEmpty ? 'current' : 'tab';
                 }).toString().replace(/^.*{|}$/g, '') + '$&'));
             /*}, false: function() {
                 searchbar.addEventListener('load', this[true]);
             }}[!!searchbar.handleSearchCommand]();*/
             var oneOffButtons = document.getElementById('PopupSearchAutoComplete').oneOffButtons;
             oneOffButtons && eval('oneOffButtons.handleSearchCommand=' + oneOffButtons.handleSearchCommand.toString().replace(/this\.popup\.handleOneOffSearch\(aEvent, aEngine, where, params\);/, (function() {
-                where = isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) ? 'current' : 'tab';
+                where = typeof isTabEmpty === "function" && isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) || gBrowser.selectedTab.isEmpty ? 'current' : 'tab';
             }).toString().replace(/^.*{|}$/g, '') + '$&'));
             var oneOffSearchButtons = document.getElementById('PopupAutoCompleteRichResult').input.popup.oneOffSearchButtons;
             oneOffSearchButtons && eval('oneOffSearchButtons.handleSearchCommand=' + oneOffSearchButtons.handleSearchCommand.toString().replace(/this\.popup\.handleOneOffSearch\(aEvent, aEngine, where, params\);/, (function() {
-                where = isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) ? 'current' : 'tab';
+                where = typeof isTabEmpty === "function" && isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) || gBrowser.selectedTab.isEmpty ? 'current' : 'tab';
             }).toString().replace(/^.*{|}$/g, '') + '$&'));
         }
     } else if (location == 'chrome://browser/content/places/places.xul') {
