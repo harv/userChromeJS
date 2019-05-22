@@ -25,7 +25,10 @@ location == "chrome://browser/content/browser.xul" && (function undoCloseTabCont
     		return popup._ss.getClosedTabCount(window);
     	}
     }
-    if (HistoryMenu.prototype._elements) {  // ff 62+
+    var appVer = parseFloat(AppConstants.MOZ_APP_VERSION);
+    if (appVer >= 68) {
+        popup.populateUndoSubmenu = eval("(" + HistoryMenu.prototype.populateUndoSubmenu.toString().replace(/\.undoTabMenu\.menupopup/, "").replace(/\.undoTabMenu/g, "") + ")");
+    } else if (appVer >= 62) {
         popup.populateUndoSubmenu = eval("(" + HistoryMenu.prototype.populateUndoSubmenu.toString().replace(/\.undoTabMenu\.firstChild/, "").replace(/\.undoTabMenu/g, "") + ")");
     } else {
         popup.populateUndoSubmenu = eval("(" + HistoryMenu.prototype.populateUndoSubmenu.toString().replace(/\._rootElt.*/, ";").replace(/undoMenu\.firstChild/, "this") + ")");
