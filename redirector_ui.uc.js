@@ -7,7 +7,7 @@
 // @homepage        http://haoutil.com
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
-// @shutdown        Redirector.destroy(true);
+// @shutdown        Redirector.destroy();
 // @version         1.6.0
 // ==/UserScript==
 location == "chrome://browser/content/browser.xul" && (function() {
@@ -38,19 +38,17 @@ location == "chrome://browser/content/browser.xul" && (function() {
                     redirector.clearCache = function() {
                         this.redirectUrls = {};
                     };
-                    redirector.rules = [];
                     redirector.state = state;
-                    redirector.clearCache();
                     return redirector;
                 });
+                if (this.state) {
+                    Services.redirector.init();
+                }
             }
             return Services.redirector;
         },
         init: function() {
             this.state = this.redirector.state;
-            if (this.state) {
-                this.redirector.init();
-            }
             this.loadRule();
             this.drawUI();
             // register self as a messagelistener
@@ -58,11 +56,8 @@ location == "chrome://browser/content/browser.xul" && (function() {
             Services.cpmm.addMessageListener("redirector:toggle-item", this);
             Services.cpmm.addMessageListener("redirector:reload", this);
         },
-        destroy: function(shouldDestoryUI) {
-            this.redirector.destroy();
-            if (shouldDestoryUI) {
-                this.destoryUI();
-            }
+        destroy: function() {
+            this.destoryUI();
             // Services.cpmm.removeMessageListener("redirector:toggle", this);
             // Services.cpmm.removeMessageListener("redirector:toggle-item", this);
             // Services.cpmm.removeMessageListener("redirector:reload", this);
@@ -211,10 +206,14 @@ location == "chrome://browser/content/browser.xul" && (function() {
                 this.state = !this.state;
                 this.redirector.state = this.state;
                 if (this.state) {
-                    this.init();
+                    if (!callfromMessage) {
+                        this.redirector.init();
+                    }
                     Object.keys(menuitems).forEach(function(n) {menuitems[n].setAttribute("disabled", false)});
                 } else {
-                    this.destroy();
+                    if (!callfromMessage) {
+                        this.redirector.destroy();
+                    }
                     Object.keys(menuitems).forEach(function(n) {menuitems[n].setAttribute("disabled", true)});
                 }
                 // update checkbox state
