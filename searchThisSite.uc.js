@@ -1,5 +1,5 @@
 //站内搜索
-(function () {
+location == "chrome://browser/content/browser.xhtml" && (function () {
     Components.utils.import("resource://gre/modules/Services.jsm");
 
     if (Services.search.isInitialized) {

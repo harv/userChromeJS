@@ -2,14 +2,14 @@
 // @name           undoCloseTabContext.uc.js
 // @namespace      undoCloseTabContext@harv.c
 // @description    标签栏右键菜单显示最近关闭的标签页
-// @include        chrome://browser/content/browser.xul
+// @include        chrome://browser/content/browser.xhtml
 // @author         harv.c
 // ==/UserScript==
-location == "chrome://browser/content/browser.xul" && (function undoCloseTabContext() {
+location == "chrome://browser/content/browser.xhtml" && (function undoCloseTabContext() {
     var tabsToolbar = document.getElementById("TabsToolbar");
     if(!tabsToolbar) return;
 
-    var popup = document.getElementById("mainPopupSet").appendChild(document.createElement("menupopup"));
+    var popup = document.getElementById("mainPopupSet").appendChild(document.createXULElement("menupopup"));
     popup.setAttribute("id", "undoCloseTabContextMenu");
     popup.setAttribute("onpopupshowing", "this.populateUndoSubmenu();");
     popup.setAttribute("oncommand", "event.stopPropagation();");

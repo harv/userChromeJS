@@ -2,15 +2,15 @@
 // @name            redirector_ui.uc.js
 // @namespace       redirector@haoutil.com
 // @description     Redirect your requests.
-// @include         chrome://browser/content/browser.xul
+// @include         chrome://browser/content/browser.xhtml
 // @author          harv.c
 // @homepage        http://haoutil.com
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy();
-// @version         1.6.0
+// @version         1.6.1
 // ==/UserScript==
-location == "chrome://browser/content/browser.xul" && (function() {
+location == "chrome://browser/content/browser.xhtml" && (function() {
     const {
         classes: Cc,
         interfaces: Ci,
@@ -65,9 +65,9 @@ location == "chrome://browser/content/browser.xul" && (function() {
         drawUI: function() {
             if (this.addIcon > 0 && !document.getElementById("redirector-icon")) {
                 // add menu
-                let menu = document.getElementById("mainPopupSet").appendChild(document.createElement("menupopup"));
+                let menu = document.getElementById("mainPopupSet").appendChild(document.createXULElement("menupopup"));
                 menu.setAttribute("id", "redirector-menupopup");
-                let menuitem = menu.appendChild(document.createElement("menuitem"));
+                let menuitem = menu.appendChild(document.createXULElement("menuitem"));
                 menuitem.setAttribute("label", "Enable");
                 menuitem.setAttribute("id", "redirector-toggle");
                 menuitem.setAttribute("type", "checkbox");
@@ -75,26 +75,26 @@ location == "chrome://browser/content/browser.xul" && (function() {
                 menuitem.setAttribute("key", "redirector-toggle-key");
                 menuitem.setAttribute("checked", this.state);
                 menuitem.setAttribute("oncommand", "Redirector.toggle();");
-                menuitem = menu.appendChild(document.createElement("menuitem"));
+                menuitem = menu.appendChild(document.createXULElement("menuitem"));
                 menuitem.setAttribute("label", "Reload");
                 menuitem.setAttribute("id", "redirector-reload");
                 menuitem.setAttribute("oncommand", "Redirector.reload();");
-                menuitem = menu.appendChild(document.createElement("menuitem"));
+                menuitem = menu.appendChild(document.createXULElement("menuitem"));
                 menuitem.setAttribute("label", "Edit");
                 menuitem.setAttribute("id", "redirector-edit");
                 menuitem.setAttribute("oncommand", "Redirector.edit();");
-                let menuseparator = menu.appendChild(document.createElement("menuseparator"));
+                let menuseparator = menu.appendChild(document.createXULElement("menuseparator"));
                 menuseparator.setAttribute("id", "redirector-separator");
                 // add icon
                 if (this.addIcon == 1) {
-                    let icon = document.getElementById("urlbar-icons").appendChild(document.createElement("image"));
+                    let icon = document.getElementById("urlbar-icons").appendChild(document.createXULElement("image"));
                     icon.setAttribute("id", "redirector-icon");
                     icon.setAttribute("context", "redirector-menupopup");
                     icon.setAttribute("onclick", "Redirector.iconClick(event);");
                     icon.setAttribute("tooltiptext", "Redirector");
                     icon.setAttribute("style", "list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
                 } else if (this.addIcon == 2) {
-                    let icon = document.getElementById("nav-bar-customization-target").appendChild(document.createElement("toolbarbutton"));
+                    let icon = document.getElementById("nav-bar-customization-target").appendChild(document.createXULElement("toolbarbutton"));
                     icon.setAttribute("id", "redirector-icon");
                     icon.setAttribute("class", "toolbarbutton-1 chromeclass-toolbar-additional");
                     icon.setAttribute("label", "Redirector");
@@ -103,7 +103,7 @@ location == "chrome://browser/content/browser.xul" && (function() {
                     icon.setAttribute("popup", "redirector-menupopup");
                     icon.setAttribute("style", "list-style-image: url(" + (this.state ? this.enableIcon : this.disableIcon) + ")");
                 } else if (this.addIcon == 3) {
-                    let icon = document.getElementById("devToolsSeparator").parentNode.appendChild(document.createElement("menu"));
+                    let icon = document.getElementById("devToolsSeparator").parentNode.appendChild(document.createXULElement("menu"));
                     icon.setAttribute("id", "redirector-icon");
                     icon.setAttribute("class", "menu-iconic");
                     icon.setAttribute("label", "Redirector");
@@ -115,7 +115,7 @@ location == "chrome://browser/content/browser.xul" && (function() {
             }
             if (!document.getElementById("redirector-toggle-key")) {
                 // add shortcuts
-                let key = document.getElementById("mainKeyset").appendChild(document.createElement("key"));
+                let key = document.getElementById("mainKeyset").appendChild(document.createXULElement("key"));
                 key.setAttribute("id", "redirector-toggle-key");
                 key.setAttribute("oncommand", "Redirector.toggle();");
                 key.setAttribute("key", "r");
@@ -143,7 +143,7 @@ location == "chrome://browser/content/browser.xul" && (function() {
             let menu = document.getElementById("redirector-menupopup");
             if (!menu) return;
             for (let i = 0; i < this.redirector.rules.length; i++) {
-                let menuitem = menu.appendChild(document.createElement("menuitem"));
+                let menuitem = menu.appendChild(document.createXULElement("menuitem"));
                 menuitem.setAttribute("label", this.redirector.rules[i].name);
                 menuitem.setAttribute("id", "redirector-item-" + i);
                 menuitem.setAttribute("class", "redirector-item");

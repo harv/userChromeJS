@@ -2,10 +2,17 @@
 // @name            openNewTab.uc.js
 // @namespace       opennewtab@haoutil.com
 // @include         main
+// @include         chrome://browser/content/browser.xhtml
+// @include         chrome://browser/content/bookmarks/bookmarksPanel.xul
+// @include         chrome://browser/content/history/history-panel.xul
+// @include         chrome://browser/content/places/bookmarksSidebar.xul
+// @include         chrome://browser/content/places/historySidebar.xul
+// @include         chrome://browser/content/syncedtabs/sidebar.xhtml
+// @include         chrome://browser/content/readinglist/sidebar.xhtml
 // @include         chrome://browser/content/places/places.xul
 // @description     Open Bookmarks/History/Search in New Tab
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/openNewTab.uc.js
-// @version         1.4.0
+// @version         1.4.1
 // ==/UserScript==
 (function() {
     var b_urlbar = false;
@@ -71,7 +78,7 @@
     function generateWhere() {
         where = typeof isTabEmpty === "function" && isTabEmpty(gBrowser.mCurrentTab || gBrowser.selectedTab) || gBrowser.selectedTab.isEmpty ? 'current' : 'tab';
     }
-    if (location == 'chrome://browser/content/browser.xul') {
+    if (location == 'chrome://browser/content/browser.xhtml') {
         /* :::: Open Bookmarks/History in New Tab :::: */
         eval('whereToOpenLink = ' + generateReplacement(whereToOpenLink, /(return "current";)(?![\s\S]*\1)/g, whereToOpenLinkMod));
         var sidebar = document.getElementById('sidebar');

@@ -1,6 +1,4 @@
-(function () {
-if (location != "chrome://browser/content/browser.xul") return;
-
+location == "chrome://browser/content/browser.xhtml" && (function () {
 window.KeyChanger = {
 	keys : {
 		// 重启浏览器
@@ -73,12 +71,12 @@ window.KeyChanger = {
 		var keyset = document.getElementById('keychanger-keyset');
 		if (keyset)
 			keyset.parentNode.removeChild(keyset);
-		keyset = document.createElement('keyset');
+		keyset = document.createXULElement('keyset');
 		keyset.setAttribute('id', 'keychanger-keyset');
 		keyset.appendChild(keys);
 
 		var df = document.createDocumentFragment();
-		Array.slice(document.getElementsByTagName('keyset')).forEach(function(elem) {
+		Array.prototype.slice(document.getElementsByTagName('keyset')).forEach(function(elem) {
 			df.appendChild(elem);
 		});
 		var insPos = document.getElementById('mainPopupSet');
@@ -171,7 +169,7 @@ window.KeyChanger = {
 						break;
 				}
 			}
-			let elem = document.createElement('key');
+			let elem = document.createXULElement('key');
 			if (modifiers !== '')
 				elem.setAttribute('modifiers', modifiers.slice(0, -1));
 			if (key)

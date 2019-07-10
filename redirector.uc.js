@@ -2,15 +2,15 @@
 // @name            redirector.uc.js
 // @namespace       redirector@haoutil.com
 // @description     Redirect your requests.
-// @include         chrome://browser/content/browser.xul
+// @include         chrome://browser/content/browser.xhtml
 // @author          harv.c
 // @homepage        http://haoutil.com
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector.uc.js
 // @startup         Services.redirector.init();
 // @shutdown        Services.redirector.destroy();
-// @version         1.6.0
+// @version         1.6.1
 // ==/UserScript==
-location == "chrome://browser/content/browser.xul" && (function() {
+location == "chrome://browser/content/browser.xhtml" && (function() {
     const {
         classes: Cc,
         interfaces: Ci,
