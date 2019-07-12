@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy();
-// @version         1.6.1
+// @version         1.6.2
 // ==/UserScript==
 location == "chrome://browser/content/browser.xhtml" && (function() {
     const {
@@ -20,6 +20,7 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
 
     Cu.import("resource://gre/modules/XPCOMUtils.jsm");
     Cu.import("resource://gre/modules/Services.jsm");
+    Cu.import("resource://gre/modules/NetUtil.jsm");
 
     function RedirectorUI() {
         this.rules = "local/_redirector.js".split("/"); // 规则文件路径
@@ -302,11 +303,11 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
     Redirector.prototype = {
         init: function() {
             Services.obs.addObserver(this, "http-on-modify-request", false);
-            Services.obs.addObserver(this, "http-on-examine-response", false);
+            // Services.obs.addObserver(this, "http-on-examine-response", false);
         },
         destroy: function() {
             Services.obs.removeObserver(this, "http-on-modify-request", false);
-            Services.obs.removeObserver(this, "http-on-examine-response", false);
+            // Services.obs.removeObserver(this, "http-on-examine-response", false);
         },
         getRedirectUrl: function(originUrl) {
             let redirectUrl = this.redirectUrls[originUrl];
@@ -350,57 +351,48 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
         wildcardToRegex: function(wildcard) {
             return new RegExp((wildcard + "").replace(new RegExp("[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]", "g"), "\\$&").replace(/\\\*/g, "(.*)").replace(/\\\?/g, "."), "i");
         },
-        doRedirect: function(http, redirectUrl, replaceResponse) {
-            http.suspend();
-            http.QueryInterface(Ci.nsITraceableChannel);
-            let oldListener = http.setNewListener({
-                onStartRequest: function() {},
-                onStopRequest: function() {},
-                onDataAvailable: function() {},
-            });
-            let loadInfo = http.loadInfo;
-            let uri = Services.io.newURI(redirectUrl.url, null, null);
-            let newHttp = Services.io.newChannelFromURIWithLoadInfo(uri, loadInfo);
-            if (replaceResponse) newHttp.originalURI = http.URI;
-            newHttp.asyncOpen({
-                onStartRequest: function(request, context) {
-                    oldListener.onStartRequest(request, context);
-                },
-                onStopRequest: function(request, context, statusCode) {
-                    oldListener.onStopRequest(request, context, statusCode);
-                    http.resume();
-                    http.cancel(Cr.NS_BINDING_REDIRECTED);
-                },
-                onDataAvailable: function(request, context, inputStream, offset, count) {
-                    oldListener.onDataAvailable(request, context, inputStream, offset, count);
-                },
-            }, null);
-        },
         // nsIObserver interface implementation
         observe: function(subject, topic, data, additional) {
             switch (topic) {
                 case "http-on-modify-request": {
                     let http = subject.QueryInterface(Ci.nsIHttpChannel);
                     let redirectUrl = this.getRedirectUrl(http.URI.spec);
-                    if (redirectUrl && !redirectUrl.resp) {
-                        // this.doRedirect(http, redirectUrl, false);
+                    if (redirectUrl/* && !redirectUrl.resp*/) {
                         http.cancel(Cr.NS_BINDING_REDIRECTED); // NS_BINDING_ABORTED
                         let loadInfo = http.loadInfo;
-                        let uri = Services.io.newURI(redirectUrl.url, null, null);
-                        loadInfo.loadingContext.webNavigation.loadURI(redirectUrl.url, {
-                            triggeringPrincipal: Services.scriptSecurityManager.createCodebasePrincipal(uri, loadInfo.triggeringPrincipal),
+                        let webNavigation = loadInfo.loadingContext/*browser*/.webNavigation
+                            || loadInfo.loadingContext/*frame*/.contentWindow.top.getInterface(Ci.nsIWebNavigation);
+                        webNavigation.loadURI(redirectUrl.url, {
+                            triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
                         });
                     }
                     break;
                 }
-                case "http-on-examine-response": {
-                    let http = subject.QueryInterface(Ci.nsIHttpChannel);
-                    let redirectUrl = this.getRedirectUrl(http.URI.spec);
-                    if (redirectUrl && redirectUrl.resp) {
-                        this.doRedirect(http, redirectUrl, true);
-                    }
-                    break;
-                }
+                // case "http-on-examine-response": {
+                //     let http = subject.QueryInterface(Ci.nsIHttpChannel);
+                //     let redirectUrl = this.getRedirectUrl(http.URI.spec);
+                //     if (redirectUrl && redirectUrl.resp) {
+                //         http.suspend();
+                //         http.QueryInterface(Ci.nsITraceableChannel);
+                //         let oldListener = http.setNewListener({
+                //             onStartRequest: function () {},
+                //             onStopRequest: function () {},
+                //             onDataAvailable: function () {},
+                //         });
+                //         NetUtil.asyncFetch({
+                //             uri: Services.io.newURI(redirectUrl.url, null, null),
+                //             loadingPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
+                //             securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                //             contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+                //         }, function(inputStream, statusCode, request) {
+                //             http.resume();
+                //             oldListener.onStartRequest(request/*, context*/);
+                //             oldListener.onDataAvailable(request/*, context*/, inputStream, 0, inputStream.available());
+                //             oldListener.onStopRequest(request/*, context*/, Cr.NS_OK);
+                //         });
+                //     }
+                //     break;
+                // }
             }
         },
         // nsIFactory interface implementation
