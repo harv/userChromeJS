@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy();
-// @version         1.6.2
+// @version         1.6.3
 // ==/UserScript==
 location == "chrome://browser/content/browser.xhtml" && (function() {
     const {
@@ -359,9 +359,8 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
                     let redirectUrl = this.getRedirectUrl(http.URI.spec);
                     if (redirectUrl/* && !redirectUrl.resp*/) {
                         http.cancel(Cr.NS_BINDING_REDIRECTED); // NS_BINDING_ABORTED
-                        let loadInfo = http.loadInfo;
-                        let webNavigation = loadInfo.loadingContext/*browser*/.webNavigation
-                            || loadInfo.loadingContext/*frame*/.contentWindow.top.getInterface(Ci.nsIWebNavigation);
+                        let loadingContext = (http.notificationCallbacks || http.loadGroup.notificationCallbacks).getInterface(Ci.nsILoadContext);
+                        let webNavigation = loadingContext.topFrameElement/*browser*/.webNavigation;
                         webNavigation.loadURI(redirectUrl.url, {
                             triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
                         });
