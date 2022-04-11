@@ -5,15 +5,16 @@
 // @include         chrome://browser/content/browser.xhtml
 // @description     Open Bookmarks/History/Search in New Tab
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/openNewTab.uc.js
-// @version         1.5.0
+// @version         1.5.1
 // ==/UserScript==
 location == "chrome://browser/content/browser.xhtml" && (function () {
     Components.utils.import("resource://gre/modules/Services.jsm");
 
     Services.obs.addObserver(function observer(subject, topic, data) {
+        if (data != "init-complete") return;
         Services.obs.removeObserver(observer, topic);
         doReplace();
-    }, "toplevel-window-ready");
+    }, "browser-search-service");
 
     function generateReplacement(func, regexp, replacementFunc, appendMatch) {
         var replacementStr = replacementFunc.toString().replace(/^.*{|}$/g, '');

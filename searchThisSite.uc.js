@@ -5,14 +5,14 @@
 // @include         chrome://browser/content/browser.xhtml
 // @description     Search This Site
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/searchThisSite.uc.js
-// @version         1.0.0
+// @version         1.0.1
 // ==/UserScript==
 location == "chrome://browser/content/browser.xhtml" && (function () {
     Components.utils.import("resource://gre/modules/Services.jsm");
 
     Services.obs.addObserver(function observer(subject, topic, data) {
         if (data != "init-complete") return;
-        Services.obs.removeObserver(observer, "browser-search-service");
+        Services.obs.removeObserver(observer, topic);
         addSiteSearchEngine();
     }, "browser-search-service");
 
@@ -27,6 +27,7 @@ location == "chrome://browser/content/browser.xhtml" && (function () {
                 engineUrl,
             );
             engine = Services.search.getEngineByName(engineName);
+            engine.wrappedJSObject._setIcon(engineIcon, true)
         }
 
         engine = engine.wrappedJSObject;
