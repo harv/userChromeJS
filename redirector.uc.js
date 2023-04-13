@@ -109,7 +109,8 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
                         http.cancel(Cr.NS_BINDING_REDIRECTED); // NS_BINDING_ABORTED
                         let loadingContext = (http.notificationCallbacks || http.loadGroup.notificationCallbacks).getInterface(Ci.nsILoadContext);
                         let webNavigation = loadingContext.topFrameElement/*browser*/.webNavigation;
-                        webNavigation.loadURI(redirectUrl.url, {
+                        let loadURI = webNavigation.fixupAndLoadURIString || webNavigation.loadURI;
+                        loadURI.call(webNavigation, redirectUrl.url, {
                             triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
                         });
                     }
