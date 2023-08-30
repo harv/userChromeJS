@@ -18,9 +18,10 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
         results: Cr,
     } = Components;
 
-    Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-    Cu.import("resource://gre/modules/Services.jsm");
-    Cu.import("resource://gre/modules/NetUtil.jsm");
+    const { XPCOMUtils } = Cu.import('resource://gre/modules/XPCOMUtils.jsm');
+    const { Services } = globalThis || Cu.import("resource://gre/modules/Services.jsm");
+    const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm");
+    const { FileUtils } = Cu.import("resource://gre/modules/FileUtils.jsm");
 
     function RedirectorUI() {
         this.rules = "local/_redirector.js".split("/"); // 规则文件路径
@@ -167,7 +168,7 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
             if (!forceLoadRule && this.redirector.rules.length > 0) {
                 return;
             }
-            var aFile = FileUtils.getFile("UChrm", this.rules, false);
+            var aFile = FileUtils.getDir("UChrm", this.rules, true);
             if (!aFile.exists() || !aFile.isFile()) return null;
             var fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
             var sstream = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(Ci.nsIScriptableInputStream);
@@ -246,7 +247,7 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
             }
         },
         edit: function() {
-            let aFile = FileUtils.getFile("UChrm", this.rules, false);
+            let aFile = FileUtils.getDir("UChrm", this.rules, true);
             if (!aFile || !aFile.exists() || !aFile.isFile()) return;
             var editor;
             try {

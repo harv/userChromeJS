@@ -18,9 +18,9 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
         results: Cr,
     } = Components;
 
-    Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-    Cu.import("resource://gre/modules/Services.jsm");
-    Cu.import("resource://gre/modules/NetUtil.jsm");
+    const { XPCOMUtils } = Cu.import('resource://gre/modules/XPCOMUtils.jsm');
+    const { Services } = globalThis || Cu.import("resource://gre/modules/Services.jsm");
+    const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm");
 
     function Redirector() {
         this.rules = [{

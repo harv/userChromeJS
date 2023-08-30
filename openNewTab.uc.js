@@ -8,7 +8,7 @@
 // @version         1.5.1
 // ==/UserScript==
 location == "chrome://browser/content/browser.xhtml" && (function () {
-    Components.utils.import("resource://gre/modules/Services.jsm");
+    const { Services } = globalThis || Cu.import("resource://gre/modules/Services.jsm");
 
     Services.obs.addObserver(function observer(subject, topic, data) {
         if (data != "init-complete") return;
