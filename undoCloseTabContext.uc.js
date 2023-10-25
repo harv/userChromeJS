@@ -18,14 +18,25 @@ location == "chrome://browser/content/browser.xhtml" && (function undoCloseTabCo
     popup.setAttribute("tooltip", "bhTooltip");
     popup.setAttribute("popupsinherittooltip", "true");
 
-    popup._getClosedTabCount = HistoryMenu.prototype._getClosedTabCount;	// fx 35+
-    if (!popup._getClosedTabCount) {
+    var appVer = parseFloat(AppConstants.MOZ_APP_VERSION);
+
+    if (appVer >= 119) {
+        popup._getClosedTabCount = function() {
+            try {
+                return SessionStore.getClosedTabCount();
+            } catch (ex) {
+                return 0;
+            }
+        };
+    } else if (appVer >= 35) {
+        popup._getClosedTabCount = HistoryMenu.prototype._getClosedTabCount;
+    } else {
     	popup._ss = Cc["@mozilla.org/browser/sessionstore;1"].getService(Ci.nsISessionStore);
     	popup._getClosedTabCount = function() {
     		return popup._ss.getClosedTabCount(window);
     	}
     }
-    var appVer = parseFloat(AppConstants.MOZ_APP_VERSION);
+
     if (appVer >= 68) {
         popup.populateUndoSubmenu = eval("(" + HistoryMenu.prototype.populateUndoSubmenu.toString().replace(/\.undoTabMenu\.menupopup/, "").replace(/\.undoTabMenu/g, "") + ")");
     } else if (appVer >= 62) {
