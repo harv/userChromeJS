@@ -5,7 +5,9 @@
 // @include        chrome://browser/content/browser.xhtml
 // @author         harv.c
 // ==/UserScript==
-location == "chrome://browser/content/browser.xhtml" && (function undoCloseTabContext() {
+location == "chrome://browser/content/browser.xhtml" && (async function undoCloseTabContext() {
+    if (!gBrowserInit.delayedStartupFinished) await window.delayedStartupPromise;
+
     var tabsToolbar = document.getElementById("TabsToolbar");
     if(!tabsToolbar) return;
 
@@ -46,25 +48,5 @@ location == "chrome://browser/content/browser.xhtml" && (function undoCloseTabCo
     }
 
     // replace right click context menu when has recently closed tabs
-    var UpdateUndoCloseTabCommand = function() {
-        tabsToolbar.setAttribute("context", "undoCloseTabContextMenu");
-    };
-
-    if(popup._getClosedTabCount() > 0) {
-        UpdateUndoCloseTabCommand();
-    } else {
-        (gBrowser.mTabContainer || gBrowser.tabContainer).addEventListener("TabClose", function() {
-            UpdateUndoCloseTabCommand();
-            (gBrowser.mTabContainer || gBrowser.tabContainer).removeEventListener("TabClose", this, false);
-        }, false);
-    }
-
-    // undoclose tab by middle click on tabbar
-    (gBrowser.mTabContainer || gBrowser.tabContainer).addEventListener('click', function(e) {
-        if (e.button != 1 || e.target.localName != 'tabs') return;
-        undoCloseTab(0);
-        e.preventDefault();
-        e.stopPropagation();
-    }, true);
-
+    tabsToolbar.setAttribute("context", "undoCloseTabContextMenu");
 })();
