@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector.uc.js
 // @startup         Services.redirector.init();
 // @shutdown        Services.redirector.destroy();
-// @version         1.6.3
+// @version         1.6.4
 // ==/UserScript==
 location == "chrome://browser/content/browser.xhtml" && (function() {
     const {
@@ -18,9 +18,9 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
         results: Cr,
     } = Components;
 
-    const { XPCOMUtils } = Cu.import('resource://gre/modules/XPCOMUtils.jsm');
+    const { XPCOMUtils } = globalThis || Cu.import('resource://gre/modules/XPCOMUtils.jsm');
     const { Services } = globalThis || Cu.import("resource://gre/modules/Services.jsm");
-    const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm");
+    const { NetUtil } = globalThis || Cu.import("resource://gre/modules/NetUtil.jsm");
 
     function Redirector() {
         this.rules = [{
