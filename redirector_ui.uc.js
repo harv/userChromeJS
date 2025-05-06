@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector_ui.uc.js
 // @startup         Redirector.init();
 // @shutdown        Redirector.destroy();
-// @version         1.6.4
+// @version         1.6.5
 // ==/UserScript==
 location == "chrome://browser/content/browser.xhtml" && (function() {
     const {
@@ -35,7 +35,7 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
         get redirector() {
             if (!Services.redirector) {
                 let state = this.state;
-                XPCOMUtils.defineLazyGetter(Services, "redirector", function() {
+                (ChromeUtils.defineLazyGetter || XPCOMUtils.defineLazyGetter)(Services, "redirector", function() {
                     let redirector = new Redirector();
                     redirector.clearCache = function() {
                         this.redirectUrls = {};
@@ -76,15 +76,18 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
                 menuitem.setAttribute("autocheck", "false");
                 menuitem.setAttribute("key", "redirector-toggle-key");
                 menuitem.setAttribute("checked", this.state);
-                menuitem.setAttribute("oncommand", "Redirector.toggle();");
+                // menuitem.setAttribute("oncommand", "Redirector.toggle();");
+                menuitem.addEventListener("command", () => window.Redirector.toggle());
                 menuitem = menu.appendChild(document.createXULElement("menuitem"));
                 menuitem.setAttribute("label", "Reload");
                 menuitem.setAttribute("id", "redirector-reload");
-                menuitem.setAttribute("oncommand", "Redirector.reload();");
+                // menuitem.setAttribute("oncommand", "Redirector.reload();");
+                menuitem.addEventListener("command", () =>window.Redirector.reload());
                 menuitem = menu.appendChild(document.createXULElement("menuitem"));
                 menuitem.setAttribute("label", "Edit");
                 menuitem.setAttribute("id", "redirector-edit");
-                menuitem.setAttribute("oncommand", "Redirector.edit();");
+                // menuitem.setAttribute("oncommand", "Redirector.edit();");
+                menuitem.addEventListener("command", () => window.Redirector.edit());
                 let menuseparator = menu.appendChild(document.createXULElement("menuseparator"));
                 menuseparator.setAttribute("id", "redirector-separator");
                 // add icon
@@ -119,7 +122,8 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
                 // add shortcuts
                 let key = document.getElementById("mainKeyset").appendChild(document.createXULElement("key"));
                 key.setAttribute("id", "redirector-toggle-key");
-                key.setAttribute("oncommand", "Redirector.toggle();");
+                // key.setAttribute("oncommand", "Redirector.toggle();");
+                key.addEventListener("command", () => window.Redirector.toggle());
                 key.setAttribute("key", "r");
                 key.setAttribute("modifiers", "shift");
             }
@@ -152,7 +156,8 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
                 menuitem.setAttribute("type", "checkbox");
                 menuitem.setAttribute("autocheck", "false");
                 menuitem.setAttribute("checked", typeof this.redirector.rules[i].state === "undefined" ? true : this.redirector.rules[i].state);
-                menuitem.setAttribute("oncommand", "Redirector.toggle('"+ i +"');");
+                // menuitem.setAttribute("oncommand", "Redirector.toggle('" + i + "');");
+                menuitem.addEventListener("command", () => window.Redirector.toggle(i));
                 menuitem.setAttribute("disabled", !this.state);
             }
         },

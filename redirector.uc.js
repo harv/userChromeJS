@@ -8,7 +8,7 @@
 // @downloadURL     https://raw.githubusercontent.com/Harv/userChromeJS/master/redirector.uc.js
 // @startup         Services.redirector.init();
 // @shutdown        Services.redirector.destroy();
-// @version         1.6.4
+// @version         1.6.5
 // ==/UserScript==
 location == "chrome://browser/content/browser.xhtml" && (function() {
     const {
@@ -154,7 +154,7 @@ location == "chrome://browser/content/browser.xhtml" && (function() {
     };
 
     if (!Services.redirector) {
-        XPCOMUtils.defineLazyGetter(Services, "redirector", function() {
+        (ChromeUtils.defineLazyGetter || XPCOMUtils.defineLazyGetter)(Services, "redirector", function() {
             return new Redirector();
         });
         Services.redirector.init();
